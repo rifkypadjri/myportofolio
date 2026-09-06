@@ -3,3 +3,9 @@ NPM : 2506585800
 Kelas : PBP A
 
 readme yang udah diubah buat latihan branch
+
+### Tugas 1
+
+1. ...
+2. ...
+3. ...
