@@ -1,79 +1,232 @@
 <!doctype html>
-<html lang="en">
+<html lang="id">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Muhammad Rifky Padjri - Portfolio</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap"
-      rel="stylesheet"
-    />
+    <title>Muhammad Rifky Padjri - Personal Portfolio</title>
     <link rel="stylesheet" href="/static/css/style.css" />
   </head>
   <body>
-    <header class="site-header">
+    <!-- Header & Navigation -->
+    <header>
       <div class="container">
-        <a href="#profile" class="brand">Padjri</a>
         <nav>
-          <a href="#profile">Profile</a>
+          <a href="#home" class="logo">Rifky Padjri</a>
+          <ul class="nav-links">
+            <li><a href="#home">Home</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#education">Education</a></li>
+            <li><a href="#skills">Skills</a></li>
+            <li><a href="#projects">Projects</a></li>
+            <li><a href="#contact">Contact</a></li>
+          </ul>
         </nav>
       </div>
     </header>
 
-    <main>
-      <section class="hero" id="profile">
-        <div class="container hero-grid">
-          <div class="hero-identity">
-            <p class="hero-kicker">
-              Computer Science &middot; Universitas Indonesia
-            </p>
-            <h1>Muhammad Rifky Padjri</h1>
+    <!-- Hero / Home Section -->
+    <section id="home">
+      <div class="container hero-content">
+        <h1>Hello, I'm <span>Muhammad Rifky Padjri</span></h1>
+        <p>
+          Undergraduate Computer Science Student at Universitas Indonesia -
+          Machine Learning & Artificial Intelligence Enthusiast
+        </p>
+      </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about">
+      <div class="container">
+        <h2 class="section-title">
+          A lifelong learner on a mission to build beautiful, intelligent tools
+          that empower people.
+        </h2>
+        <div class="story-grid">
+          <div class="story-col">
+            <div class="story-card">
+              <img src="foto-1.jpg" alt="Foto Kiri" />
+            </div>
+            <div class="story-text">
+              <h3>My background in Mathematics.</h3>
+              <p>
+                Back in high school, I spent much of my time participating in
+                math olympiads and logic competitions.
+              </p>
+              <p>
+                Those experiences gently shaped my appreciation for structured
+                thinking, showing me how numbers and logical patterns can help
+                us make sense of complex problems.
+              </p>
+            </div>
           </div>
-          <div class="hero-photo">
-            <div class="photo-block"></div>
-            <img
-              class="avatar"
-              src="/static/img/test.jpg"
-              alt="Photo of Muhammad Rifky Padjri"
-            />
-          </div>
-          <div class="hero-details">
-            <p class="bio">test, halooo dunia</p>
-            <dl class="meta-list">
-              <div class="meta-row">
-                <dt>NPM</dt>
-                <dd>2506585800</dd>
-              </div>
-              <div class="meta-row">
-                <dt>Program</dt>
-                <dd>S1 Ilmu Komputer</dd>
-              </div>
-            </dl>
-            <div class="social-links">
-              <a href="https://github.com/rifkypadjri" class="social-link"
-                >GitHub</a
-              >
-              <a
-                href="https://id.linkedin.com/in/muhammad-rifky-padjri-13b4742b7"
-                class="social-link"
-                >LinkedIn</a
-              >
-              <a href="mailto:padjri0203@gmail.com" class="social-link"
-                >Email</a
-              >
+
+          <!-- Kolom Kanan (Teks di atas, Foto di bawah) -->
+          <div class="story-col">
+            <div class="story-text">
+              <h3>But, I wanted more.</h3>
+              <p>
+                Upon entering Universitas Indonesia, I realized I didn't just
+                want to solve equations on paper. I wanted to apply that
+                mathematical precision to real-world impact. That was when I
+                discovered the world of Data. I wanted to push my analytical
+                craft further, diving deep into data science and machine
+                learning to build intelligent, human centered solutions.
+              </p>
+            </div>
+            <div class="story-card">
+              <img src="foto-2.jpg" alt="Foto Kanan" />
             </div>
           </div>
         </div>
-      </section>
-    </main>
+      </div>
+    </section>
 
-    <footer class="site-footer">
+    <!-- Education & Experience Section -->
+    <section id="education">
       <div class="container">
-        <p>
-          &copy; 2026 Padjri. Fakultas Ilmu Komputer, Universitas Indonesia.
-        </p>
+        <h2 class="section-title">Pendidikan & Pengalaman</h2>
+        <div class="timeline">
+          <div class="timeline-item">
+            <h3>S1 Ilmu Komputer</h3>
+            <div class="institution">Universitas Indonesia (Fasilkom UI)</div>
+            <p>
+              Relevant Coursework: Platform-Based Programming, Data Structures,
+              Algorithms, Operating System.
+            </p>
+          </div>
+          <div class="timeline-item">
+            <h3>Member of Data Science & AI SIG</h3>
+            <div class="institution">RISTEK Fasilkom UI</div>
+            <p>
+              Participating in internal research, collaborating on AI projects,
+              and preparing for data science competitions.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Skills Section -->
+    <section id="skills">
+      <div class="container">
+        <h2 class="section-title">Skills</h2>
+        <div class="skills-grid">
+          <div class="skill-card">
+            <h4>Programming language</h4>
+            <p>Python, C, Java</p>
+          </div>
+          <div class="skill-card">
+            <h4>Data Science & AI Tools</h4>
+            <p>CV2, Scikit-learn, Pytorch, Pandas, NumPy</p>
+          </div>
+          <div class="skill-card">
+            <h4>Web Development Tools</h4>
+            <p>HTML/CSS, Django</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Projects Section -->
+    <section id="projects">
+      <div class="container">
+        <h2 class="section-title">Proyek & Lomba</h2>
+        <div class="projects-grid">
+          <!-- Project 1 -->
+          <div class="project-card">
+            <div class="photo-frame-polaroid">
+              <img
+                src="datavidia.jpg"
+                alt="Prediksi Kualiias Udara Datavidia"
+              />
+              <p class="caption">Datavidia 10.0</p>
+            </div>
+            <div>
+              <h3>ISPU Index Forecasting (Datavidia)</h3>
+              <p>
+                Predictive data modeling for analyzing air pollution patterns
+                using Machine Learning methods.
+              </p>
+            </div>
+            <div class="tech-tags">
+              <span class="tag">Python</span>
+              <span class="tag">Machine Learning</span>
+              <span class="tag">Pandas</span>
+            </div>
+          </div>
+
+          <!-- Project 2 -->
+          <div class="project-card">
+            <div class="photo-frame-polaroid">
+              <img src="portfolio.jpg" alt="Personal Portfolio Website" />
+              <p class="caption">Platform Based Programming course</p>
+            </div>
+            <div>
+              <h3>Personal Portfolio Website</h3>
+              <p>
+                A responsive one-page portfolio website to display background,
+                skills, and projects.
+              </p>
+            </div>
+            <div class="tech-tags">
+              <span class="tag">HTML5</span>
+              <span class="tag">CSS3</span>
+              <span class="tag">Responsive</span>
+            </div>
+          </div>
+
+          <!-- Project 3 -->
+          <div class="project-card">
+            <div class="photo-frame-polaroid">
+              <img src="data-mining.jpg" alt="Eksplorasi Data Mining & AI" />
+              <p class="caption">RISTEK Fasilkom UI</p>
+            </div>
+            <div>
+              <h3>Multimodal speech emotion recognition</h3>
+              <p>
+                Developing a Multimodal Speech Emotion Recognition system with
+                Deep Learning & Fusion, Audio Processing, Computer Vision
+              </p>
+            </div>
+            <div class="tech-tags">
+              <span class="tag">Data Analysis</span>
+              <span class="tag">Python</span>
+              <span class="tag">AI</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact">
+      <div class="container">
+        <h2 class="section-title">Contact</h2>
+        <div class="contact-content">
+          <a href="mailto:Padjri0203@gmail.com" class="btn">Email</a>
+          <a
+            href="https://github.com/rifkypadjri"
+            class="btn"
+            target="_blank"
+            rel="noopener noreferrer"
+            >GitHub</a
+          >
+          <a
+            href="https://www.linkedin.com/in/muhammad-rifky-padjri-13b4742b7/"
+            class="btn"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Linkedin</a
+          >
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+      <div class="container">
+        <p>&copy; 2026 Muhammad Rifky Padjri. All Rights Reserved.</p>
       </div>
     </footer>
   </body>
