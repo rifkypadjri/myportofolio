@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Muhammad Rifky Padjri - Personal Portfolio</title>
+    <title>{{ name }} - Personal Portfolio</title>
     <link rel="stylesheet" href="/static/css/style.css" />
   </head>
   <body>
@@ -12,6 +12,8 @@
       <div class="container">
         <nav>
           <ul class="nav-links">
+            <li><a href="{% url 'main:show_main' %}">Profile</a></li>
+            <li><a href="{% url 'main:show_experience' %}">Experience</a></li>
             <li><a href="#about">About</a></li>
             <li><a href="#education">Education</a></li>
             <li><a href="#skills">Skills</a></li>
@@ -25,11 +27,8 @@
     <!-- Hero / Home Section -->
     <section id="home">
       <div class="container hero-content">
-        <h1>Hello, I'm <span>Muhammad Rifky Padjri</span></h1>
-        <p>
-          Undergraduate Computer Science Student at Universitas Indonesia -
-          Machine Learning & Artificial Intelligence Enthusiast
-        </p>
+        <h1>Hello, I'm <span>{{ name }}</span></h1>
+        <p>{{ bio }}</p>
       </div>
     </section>
 
@@ -120,7 +119,7 @@
         <h2 class="section-title">Education & Organizaiton</h2>
         <div class="timeline">
           <article class="timeline-item">
-            <h3>S1 Ilmu Komputer</h3>
+            <h3>{{ study_program }}</h3>
             <div class="institution">Universitas Indonesia (Fasilkom UI)</div>
             <p>
               Relevant Coursework: Platform-Based Programming, Data Structures,
@@ -262,9 +261,7 @@
     <!-- Footer -->
     <footer>
       <div class="container">
-        <p>
-          &copy; 2026 Muhammad Rifky Padjri - 2506585800 . All Rights Reserved.
-        </p>
+        <p>&copy; 2026 {{ name }} - {{ npm }} . All Rights Reserved.</p>
       </div>
     </footer>
   </body>
