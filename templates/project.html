@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Projects - {{ name }}</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body>
+    <!-- Header & Navigation -->
+    <header>
+      <div class="container">
+        <nav>
+          <ul class="nav-links">
+            <li><a href="{% url 'main:show_main' %}">Profile</a></li>
+            <li>
+              <a href="{% url 'main:show_experience' %}">Experience</a>
+            </li>
+            <li>
+              <a href="{% url 'main:show_achievement' %}">Achievement</a>
+            </li>
+            <li>
+              <a href="{% url 'main:show_project' %}" class="active"
+                >Projects</a
+              >
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <section id="project" class="project-page">
+      <div class="container">
+        <h2 class="section-title">Selected Work</h2>
+        <p class="project-subtitle">
+          Projects and builds that shaped my craft in data, AI, and web
+          development.
+        </p>
+
+        <div class="project-list">
+          {% for project in project_list %}
+          <article class="project-item">
+            <div class="project-thumb">
+              {% if project.thumbnail %}
+              <div class="photo-frame-polaroid">
+                <img src="{{ project.thumbnail }}" alt="{{ project.title }}" />
+              </div>
+              {% else %}
+              <div class="photo-frame-polaroid project-thumb-placeholder">
+                <span>{{ project.title|truncatechars:12 }}</span>
+              </div>
+              {% endif %}
+            </div>
+
+            <div class="project-content">
+              <h3 class="project-title">{{ project.title }}</h3>
+              <p class="project-description">{{ project.description }}</p>
+            </div>
+          </article>
+          {% empty %}
+          <p class="empty-state">Belum ada project yang ditambahkan.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+      <div class="container">
+        <p>&copy; 2026 {{ name }} - {{ npm }} . All Rights Reserved.</p>
+      </div>
+    </footer>
+  </body>
+</html>

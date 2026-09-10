@@ -29,6 +29,16 @@ class Experience(models.Model):
     class Meta:
         ordering = ['-started_at']
 
+class Project(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    title = models.CharField(max_length=255)
+    description = models.TextField()
+    thumbnail = models.URLField(blank=True, null=True)
+
+    def __str__(self):
+        return self.title
+
+
 
 class Achievement (models.Model):
     LEVEL_CHOICES = [

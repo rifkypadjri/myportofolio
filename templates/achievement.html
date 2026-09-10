@@ -21,10 +21,7 @@
                 >Achievement</a
               >
             </li>
-            <li><a href="{% url 'main:show_main' %}#about">About</a></li>
-            <li><a href="{% url 'main:show_main' %}#skills">Skills</a></li>
-            <li><a href="{% url 'main:show_main' %}#projects">Projects</a></li>
-            <li><a href="{% url 'main:show_main' %}#contact">Contact</a></li>
+            <li><a href="{% url 'main:show_project' %}">Projects</a></li>
           </ul>
         </nav>
       </div>
@@ -60,13 +57,16 @@
               <p class="achievement-meta">
                 {% if achievement.level %}
                 <span class="achievement-level"
-                  >{{ achievement.get_level_display|default:achievement.level }}</span
+                  >{{ achievement.get_level_display|default:achievement.level
+                  }}</span
                 >
                 <span class="achievement-dot" aria-hidden="true">·</span>
                 {% endif %}
                 <span class="achievement-year">{{ achievement.year }}</span>
               </p>
-              <p class="achievement-description">{{ achievement.description }}</p>
+              <p class="achievement-description">
+                {{ achievement.description }}
+              </p>
             </div>
           </article>
           {% empty %}

@@ -12,14 +12,12 @@
       <div class="container">
         <nav>
           <ul class="nav-links">
-            <li><a href="{% url 'main:show_main' %}">Profile</a></li>
+            <li>
+              <a href="{% url 'main:show_main' %}" class="active">Profile</a>
+            </li>
             <li><a href="{% url 'main:show_experience' %}">Experience</a></li>
             <li><a href="{% url 'main:show_achievement' %}">Achievement</a></li>
-            <li><a href="#about">About</a></li>
-            <li><a href="#education">Education</a></li>
-            <li><a href="#skills">Skills</a></li>
-            <li><a href="#projects">Projects</a></li>
-            <li><a href="#contact">Contact</a></li>
+            <li><a href="{% url 'main:show_project' %}">Projects</a></li>
           </ul>
         </nav>
       </div>
@@ -163,7 +161,7 @@
     <!-- Projects Section -->
     <section id="projects">
       <div class="container">
-        <h2 class="section-title">Project & Competition</h2>
+        <h2 class="section-title">Project</h2>
         <div class="projects-grid">
           <!-- Project 1 -->
           <article class="project-card">

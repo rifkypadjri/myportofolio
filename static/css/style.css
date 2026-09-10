@@ -344,6 +344,94 @@ section {
   font-weight: 500;
 }
 
+/* Project Page — inspired by Perry Wang selected work list */
+.project-page {
+  padding-top: 160px;
+  min-height: 80vh;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.project-subtitle {
+  text-align: center;
+  color: #a1a1aa;
+  font-size: 1.05rem;
+  max-width: 560px;
+  margin: -24px auto 48px;
+}
+
+.project-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.project-item {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 28px;
+  align-items: center;
+  padding: 32px 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  transition: background-color 0.25s ease;
+}
+
+.project-item:last-child {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.project-item:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.project-thumb .photo-frame-polaroid {
+  margin-bottom: 0;
+  transition: transform 0.3s ease;
+}
+
+.project-item:hover .photo-frame-polaroid {
+  transform: translateY(-4px);
+}
+
+.project-thumb .photo-frame-polaroid img {
+  height: 140px;
+}
+
+.project-thumb-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 140px;
+  background: #f4f4f5;
+  padding: 16px;
+}
+
+.project-thumb-placeholder span {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #18181b;
+  letter-spacing: -0.02em;
+  text-align: center;
+  line-height: 1.3;
+}
+
+.project-title {
+  color: #ffffff;
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 12px;
+  line-height: 1.25;
+}
+
+.project-description {
+  color: #a1a1aa;
+  font-size: 0.98rem;
+  line-height: 1.65;
+  max-width: 560px;
+}
+
 /* Achievement Page — inspired by Perry Wang selected work list */
 .achievement-page {
   padding-top: 160px;
@@ -566,6 +654,22 @@ footer {
   }
 
   .achievement-name {
+    font-size: 1.3rem;
+  }
+
+  .project-item {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 28px 4px;
+  }
+
+  .project-thumb .photo-frame-polaroid img,
+  .project-thumb-placeholder {
+    height: 180px;
+    min-height: 180px;
+  }
+
+  .project-title {
     font-size: 1.3rem;
   }
 }
