@@ -25,3 +25,33 @@ class Experience(models.Model):
     @property
     def is_ongoing(self):
         return self.ended_at is None
+
+    class Meta:
+        ordering = ['-started_at']
+
+
+class Achievement (models.Model):
+    LEVEL_CHOICES = [
+        ('international', 'International'),
+        ('national', 'National'),
+        ('province', 'Province'),
+        ('city', 'City'),
+    ]
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length= 255)
+    description = models.TextField()
+    year = models.PositiveIntegerField()
+    level = models.CharField(max_length=50, choices=LEVEL_CHOICES)
+    thumbnail = models.URLField(blank=True, null=True)
+    started_at = models.DateTimeField(auto_now_add=True)
+    ended_at = models.DateTimeField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def is_ongoing(self):
+        return self.ended_at is None
+
+    class Meta:
+        ordering = ['-started_at']

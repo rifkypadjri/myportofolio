@@ -344,6 +344,145 @@ section {
   font-weight: 500;
 }
 
+/* Achievement Page — inspired by Perry Wang selected work list */
+.achievement-page {
+  padding-top: 160px;
+  min-height: 80vh;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.achievement-subtitle {
+  text-align: center;
+  color: #a1a1aa;
+  font-size: 1.05rem;
+  max-width: 520px;
+  margin: -24px auto 48px;
+}
+
+.achievement-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.achievement-item {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 28px;
+  align-items: center;
+  padding: 32px 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  transition: background-color 0.25s ease;
+}
+
+.achievement-item:last-child {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.achievement-item:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.achievement-thumb .photo-frame-polaroid {
+  margin-bottom: 0;
+  transition: transform 0.3s ease;
+}
+
+.achievement-item:hover .photo-frame-polaroid {
+  transform: translateY(-4px);
+}
+
+.achievement-thumb .photo-frame-polaroid img {
+  height: 140px;
+}
+
+.achievement-thumb-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 140px;
+  background: #f4f4f5;
+}
+
+.achievement-thumb-placeholder span {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #18181b;
+  letter-spacing: -0.02em;
+}
+
+.achievement-name {
+  color: #ffffff;
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+  line-height: 1.25;
+}
+
+.achievement-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: #a1a1aa;
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+
+.achievement-level {
+  color: #e4e4e7;
+}
+
+.achievement-dot {
+  color: #71717a;
+}
+
+.achievement-year {
+  color: #a1a1aa;
+}
+
+.achievement-description {
+  color: #a1a1aa;
+  font-size: 0.98rem;
+  line-height: 1.65;
+  max-width: 560px;
+}
+
+.empty-state {
+  text-align: center;
+  color: #71717a;
+  padding: 48px 16px;
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+}
+
+.experience-category {
+  display: inline-block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #e4e4e7;
+  background: #27272a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 4px 12px;
+  border-radius: 9999px;
+  margin-bottom: 12px;
+}
+
+.experience-description {
+  color: #a1a1aa;
+  margin-bottom: 10px;
+}
+
+.experience-status {
+  color: #71717a;
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
 /* Contact Section */
 #contact {
   background: transparent;
@@ -412,5 +551,21 @@ footer {
 
   .hero-content h1 {
     font-size: 2.2rem;
+  }
+
+  .achievement-item {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 28px 4px;
+  }
+
+  .achievement-thumb .photo-frame-polaroid img,
+  .achievement-thumb-placeholder {
+    height: 180px;
+    min-height: 180px;
+  }
+
+  .achievement-name {
+    font-size: 1.3rem;
   }
 }

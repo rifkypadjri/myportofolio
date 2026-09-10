@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Achievement - {{ name }}</title>
+    <link rel="stylesheet" href="/static/css/style.css" />
+  </head>
+  <body>
+    <!-- Header & Navigation -->
+    <header>
+      <div class="container">
+        <nav>
+          <ul class="nav-links">
+            <li><a href="{% url 'main:show_main' %}">Profile</a></li>
+            <li>
+              <a href="{% url 'main:show_experience' %}">Experience</a>
+            </li>
+            <li>
+              <a href="{% url 'main:show_achievement' %}" class="active"
+                >Achievement</a
+              >
+            </li>
+            <li><a href="{% url 'main:show_main' %}#about">About</a></li>
+            <li><a href="{% url 'main:show_main' %}#skills">Skills</a></li>
+            <li><a href="{% url 'main:show_main' %}#projects">Projects</a></li>
+            <li><a href="{% url 'main:show_main' %}#contact">Contact</a></li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+
+    <section id="achievement" class="achievement-page">
+      <div class="container">
+        <h2 class="section-title">Achievements</h2>
+        <p class="achievement-subtitle">
+          Selected recognitions and competitions along the way.
+        </p>
+
+        <div class="achievement-list">
+          {% for achievement in achievement_list %}
+          <article class="achievement-item">
+            <div class="achievement-thumb">
+              {% if achievement.thumbnail %}
+              <div class="photo-frame-polaroid">
+                <img
+                  src="{{ achievement.thumbnail }}"
+                  alt="{{ achievement.name }}"
+                />
+              </div>
+              {% else %}
+              <div class="photo-frame-polaroid achievement-thumb-placeholder">
+                <span>{{ achievement.year }}</span>
+              </div>
+              {% endif %}
+            </div>
+
+            <div class="achievement-content">
+              <h3 class="achievement-name">{{ achievement.name }}</h3>
+              <p class="achievement-meta">
+                {% if achievement.level %}
+                <span class="achievement-level"
+                  >{{ achievement.get_level_display|default:achievement.level }}</span
+                >
+                <span class="achievement-dot" aria-hidden="true">·</span>
+                {% endif %}
+                <span class="achievement-year">{{ achievement.year }}</span>
+              </p>
+              <p class="achievement-description">{{ achievement.description }}</p>
+            </div>
+          </article>
+          {% empty %}
+          <p class="empty-state">Belum ada prestasi yang ditambahkan.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+      <div class="container">
+        <p>&copy; 2026 {{ name }} - {{ npm }} . All Rights Reserved.</p>
+      </div>
+    </footer>
+  </body>
+</html>
