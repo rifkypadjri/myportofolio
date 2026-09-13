@@ -30,6 +30,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-9n#r+n7z8is6+xuuwh_b637r_$kk5hgz*znzt*omo_pyw907)^'
 
 # SECURITY WARNING: don't run with debug turned on in production!
+CSRF_TRUSTED_ORIGINS = [
+    'https://muhammad-rifky54-myportofolio.pws.cs.ui.ac.id',
+]
+
 DEBUG = True
 
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "muhammad-rifky54-myportofolio.pws.cs.ui.ac.id"]
@@ -44,6 +48,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'main',
 ]
 
 MIDDLEWARE = [

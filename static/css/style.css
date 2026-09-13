@@ -191,20 +191,54 @@ section {
 }
 
 .timeline {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 20px;
   max-width: 800px;
   margin: 0 auto;
+  padding-left: 28px;
+}
+
+.timeline::before {
+  content: "";
+  position: absolute;
+  top: 18px;
+  bottom: 18px;
+  left: 7px;
+  width: 2px;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.08),
+    rgba(255, 255, 255, 0.45) 12%,
+    rgba(255, 255, 255, 0.45) 88%,
+    rgba(255, 255, 255, 0.08)
+  );
 }
 
 .timeline-item {
+  position: relative;
   background-color: #18181b;
   padding: 25px;
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-left: 4px solid #ffffff;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.timeline > .timeline-item::before {
+  content: "";
+  position: absolute;
+  top: 28px;
+  left: -28px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  box-shadow:
+    0 0 0 4px #0d0d0e,
+    0 0 12px rgba(255, 255, 255, 0.25);
+  z-index: 1;
 }
 
 .timeline-item h3 {
@@ -216,7 +250,7 @@ section {
 .timeline-item .institution {
   color: #e4e4e7;
   font-weight: 600;
-  margin-bottom: 12px;
+  margin-bottom: 5px;
 }
 
 .timeline-item p {
@@ -344,6 +378,317 @@ section {
   font-weight: 500;
 }
 
+/* Project Page — inspired by Perry Wang selected work list */
+.project-page {
+  padding-top: 160px;
+  min-height: 80vh;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.project-subtitle {
+  text-align: center;
+  color: #a1a1aa;
+  font-size: 1.05rem;
+  max-width: 560px;
+  margin: -24px auto 48px;
+}
+
+.project-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.project-item {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 28px;
+  align-items: center;
+  padding: 32px 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  transition: background-color 0.25s ease;
+}
+
+.project-item:last-child {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.project-item:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.project-thumb .photo-frame-polaroid {
+  margin-bottom: 0;
+  transition: transform 0.3s ease;
+}
+
+.project-item:hover .photo-frame-polaroid {
+  transform: translateY(-4px);
+}
+
+.project-thumb .photo-frame-polaroid img {
+  height: 140px;
+}
+
+.project-thumb-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 140px;
+  background: #f4f4f5;
+  padding: 16px;
+}
+
+.project-thumb-placeholder span {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #18181b;
+  letter-spacing: -0.02em;
+  text-align: center;
+  line-height: 1.3;
+}
+
+.project-title {
+  color: #ffffff;
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 12px;
+  line-height: 1.25;
+}
+
+.project-description {
+  color: #a1a1aa;
+  font-size: 0.98rem;
+  line-height: 1.65;
+  max-width: 560px;
+}
+
+/* Achievement Page — inspired by Perry Wang selected work list */
+.achievement-page {
+  padding-top: 160px;
+  min-height: 80vh;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.achievement-subtitle {
+  text-align: center;
+  color: #a1a1aa;
+  font-size: 1.05rem;
+  max-width: 520px;
+  margin: -24px auto 48px;
+}
+
+.achievement-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.achievement-item {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 28px;
+  align-items: center;
+  padding: 32px 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  transition: background-color 0.25s ease;
+}
+
+.achievement-item:last-child {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.achievement-item:hover {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.achievement-thumb .photo-frame-polaroid {
+  margin-bottom: 0;
+  transition: transform 0.3s ease;
+}
+
+.achievement-item:hover .photo-frame-polaroid {
+  transform: translateY(-4px);
+}
+
+.achievement-thumb .photo-frame-polaroid img {
+  height: 140px;
+}
+
+.achievement-thumb-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 140px;
+  background: #f4f4f5;
+}
+
+.achievement-thumb-placeholder span {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #18181b;
+  letter-spacing: -0.02em;
+}
+
+.achievement-name {
+  color: #ffffff;
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 8px;
+  line-height: 1.25;
+}
+
+.achievement-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  color: #a1a1aa;
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+
+.achievement-level {
+  color: #e4e4e7;
+}
+
+.achievement-dot {
+  color: #71717a;
+}
+
+.achievement-year {
+  color: #a1a1aa;
+}
+
+.achievement-description {
+  color: #a1a1aa;
+  font-size: 0.98rem;
+  line-height: 1.65;
+  max-width: 560px;
+}
+
+.empty-state {
+  text-align: center;
+  color: #71717a;
+  padding: 48px 16px;
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+}
+
+/* Experience Page */
+.experience-page {
+  padding-top: 160px;
+  min-height: 80vh;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.experience-subtitle {
+  text-align: center;
+  color: #a1a1aa;
+  font-size: 1.05rem;
+  max-width: 520px;
+  margin: -24px auto 48px;
+}
+
+.experience-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.experience-item {
+  display: grid;
+  grid-template-columns: 1fr 200px;
+  gap: 24px;
+  align-items: center;
+  transition:
+    transform 0.3s ease,
+    border-color 0.3s ease;
+}
+
+.experience-item:hover {
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.experience-thumb {
+  justify-self: end;
+}
+
+.experience-thumb .photo-frame-polaroid {
+  margin-bottom: 0;
+  width: 200px;
+  transition: transform 0.3s ease;
+}
+
+.experience-item:hover .photo-frame-polaroid {
+  transform: translateY(-4px);
+}
+
+.experience-thumb .photo-frame-polaroid img {
+  height: 130px;
+}
+
+.experience-thumb-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 130px;
+  background: #f4f4f5;
+  padding: 16px;
+}
+
+.experience-thumb-placeholder span {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #18181b;
+  letter-spacing: -0.02em;
+  text-align: center;
+  line-height: 1.3;
+}
+
+.experience-title {
+  color: #ffffff;
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+  line-height: 1.3;
+}
+
+.experience-category {
+  display: inline-block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #e4e4e7;
+  background: #27272a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 4px 12px;
+  border-radius: 9999px;
+  margin-bottom: 12px;
+}
+
+.experience-description {
+  color: #a1a1aa;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 10px;
+}
+
+.experience-status {
+  color: #71717a;
+  font-size: 0.88rem;
+  font-weight: 500;
+}
+
 /* Contact Section */
 #contact {
   background: transparent;
@@ -413,4 +758,72 @@ footer {
   .hero-content h1 {
     font-size: 2.2rem;
   }
+
+  .achievement-item {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 28px 4px;
+  }
+
+  .achievement-thumb .photo-frame-polaroid img,
+  .achievement-thumb-placeholder {
+    height: 180px;
+    min-height: 180px;
+  }
+
+  .achievement-name {
+    font-size: 1.3rem;
+  }
+
+  .project-item {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 28px 4px;
+  }
+
+  .project-thumb .photo-frame-polaroid img,
+  .project-thumb-placeholder {
+    height: 180px;
+    min-height: 180px;
+  }
+
+  .project-title {
+    font-size: 1.3rem;
+  }
+
+  .experience-item {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .experience-thumb {
+    justify-self: stretch;
+  }
+
+  .experience-thumb .photo-frame-polaroid {
+    width: 100%;
+  }
+
+  .experience-thumb .photo-frame-polaroid img,
+  .experience-thumb-placeholder {
+    height: 180px;
+    min-height: 180px;
+  }
+}
+
+.view-all-projects {
+  text-align: right;
+  margin-top: 20px;
+}
+
+.view-all-projects a:hover {
+  color: #e4e4e7;
+  transform: translateY(-2px);
+}
+
+.view-all-projects a {
+  color: #ffffff;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
 }
