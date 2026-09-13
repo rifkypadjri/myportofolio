@@ -30,3 +30,25 @@ Dalam pengerjaan tugas ini, saya menggunakan bantuan AI (Claude) pada bagian-bag
 berikut saya lampirkan juga link chat dengan ai:
 https://claude.ai/share/1d58728a-834a-4cb9-881a-4b3392389238
 https://share.gemini.google/M1SJOyx168q0
+
+### Tugas 2
+
+1. pertama browser akan mengirimkan http request ke server. Django akan menerima requestnya dan mengecek pada urls pada tingkat proyek, yaitu pada /portofolio/urls.py karena pada file tersebut kita menuliskan kode path("", include("main.urls")), request tersebut akan diteruskan ke urls milik app main yaitu pada /main/urls.py. berkas urls.py milik main akan mencocokkan url dengan daftar yang ada, saat pola ditemukan, django memanggil fungsi pada view.py yang terasosiasi. view bertindak sebagai pengendali utama, ketika mendapatkan request main mengambil data yang diperlukan dari model.py (bagian yang berkomunikasi langsung dengan database) kemudian memasukkannya ke tamplate html yang ada. setelah itu view membungkus kode HTML akhir yang sudah terisi data ke dalam objek HttpResponse dan mengembalikannya ke browser untuk ditampilkan kepada pengguna.
+
+2. Menyimpan data portofolio pada Model (database) daripada menuliskannya langsung (hardcoding) di dalam berkas HTML template memberikan beberapa keuntungan. Pertama kemudahan oemeliharaan dan managemen data. Menambah, mengubah, atau menghapus item portofolio dapat dilakukan dengan mudah melalui Django Admin atau antarmuka lain tanpa perlu menyentuh kode program atau merestart aplikasi. Jika ditulis langsung di template, setiap perubahan data mengharuskan developer mengubah berkas HTML dan melakukan re-deploy aplikasi. Kemudian penggunaan Model memungkinkan fitur lanjutan seperti filter kata kunci, kategori, fitur pencarian, serta pengurutan data berdasarkan tanggal. Hal ini mustahil dilakukan secara fleksibel jika data bersifat statis di HTML, terakhir data portofolio yang tersimpan di Model dapat digunakan kembali di berbagai tempat lain, misalnya ditampilkan sebagai ringkasan di dashboard admin, dibuatkan API (misalnya dengan Django REST Framework), semua ini dapat dilakukan tanpa perlu menduplikasi tulisan.
+
+3. Perintah makemigrations dan migrate pada Django memiliki fungsi yang saling melengkapi dalam mengelola perubahan skema database. Perintah makemigrations bertugas untuk membaca perubahan yang terjadi pada struktur tabel di file models.py lalu menerjemahkannya ke dalam bentuk berkas cetak biru (_blueprint_) Python di dalam folder /migrations/, tanpa mengubah database secara langsung. Sementara itu, perintah migrate berfungsi untuk mengeksekusi berkas migrasi tersebut dan menerapkan instruksi perintah SQL secara nyata ke dalam tabel database.
+
+AI Disclosure:
+penggunaan ai dilakukan untuk:
+
+- membuat file html dan css untuk halaman baru yang ditambahkan menggunakan ai agent pada cursor
+- bertanya terkait beberapa masalah teknis yang terjadi seperti tidak bisa menampilkan thumbnail gambar melalui link gdrive
+- membuatkan kalimat narasi dalam bahasa inggris yang menjelaskan tentang pengalaman dan projek yang saya miliki
+
+berikut juga saya lampirkan:
+
+1. https://share.gemini.google/zlOlVJy8BieR
+2. https://share.gemini.google/A6fGP72bzH1c
+3. https://share.gemini.google/ZQoK8cS8gmVF
+4. https://drive.google.com/file/d/12EcNLDJ1YtgdOL5P9TbUPAlC8NCOGPh9/view?usp=sharing
