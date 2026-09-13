@@ -115,22 +115,24 @@
     <!-- Education & Experience Section -->
     <section id="education">
       <div class="container">
-        <h2 class="section-title">Education & Organizaiton</h2>
+        <h2 class="section-title">Education</h2>
         <div class="timeline">
           <article class="timeline-item">
-            <h3>{{ study_program }}</h3>
-            <div class="institution">Universitas Indonesia (Fasilkom UI)</div>
+            <h3>Universitas Indonesia</h3>
+            <div class="institution">{{ study_program }}</div>
+            <p><b>GPA:</b> 3.88</p>
             <p>
-              Relevant Coursework: Platform-Based Programming, Data Structures,
-              Algorithms, Operating System.
+              <b>Relevant Coursework:</b> Platform-Based Programming, Data
+              Structures, Algorithms, Operating System.
             </p>
           </article>
           <div class="timeline-item">
-            <h3>Member of Data Science & AI SIG</h3>
-            <div class="institution">RISTEK Fasilkom UI</div>
+            <h3>SMAN Sumatera Selatan</h3>
+            <div class="institution">Science major</div>
+            <p><b>GPA:</b> 92</p>
             <p>
-              Participating in internal research, collaborating on AI projects,
-              and preparing for data science competitions.
+              <b>Relevant Coursework:</b> Mathematics, Physics, Chemistry,
+              Biology, English.
             </p>
           </div>
         </div>
@@ -229,6 +231,9 @@
               <span class="tag">AI</span>
             </div>
           </div>
+        </div>
+        <div class="view-all-projects">
+          <a href="{% url 'main:show_project' %}">View All Projects</a>
         </div>
       </div>
     </section>

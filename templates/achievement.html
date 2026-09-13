@@ -56,10 +56,7 @@
               <h3 class="achievement-name">{{ achievement.name }}</h3>
               <p class="achievement-meta">
                 {% if achievement.level %}
-                <span class="achievement-level"
-                  >{{ achievement.get_level_display|default:achievement.level
-                  }}</span
-                >
+                <span class="achievement-level">{{ achievement.level }}</span>
                 <span class="achievement-dot" aria-hidden="true">·</span>
                 {% endif %}
                 <span class="achievement-year">{{ achievement.year }}</span>

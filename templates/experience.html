@@ -27,24 +27,43 @@
       </div>
     </header>
 
-    <section id="education" style="padding-top: 160px; min-height: 80vh">
+    <section id="experience" class="experience-page">
       <div class="container">
         <h2 class="section-title">Experience</h2>
-        <div class="timeline">
-          <!-- Item 1 -->
-          {% for experience in experience_list %}
+        <p class="experience-subtitle">
+          Roles, internships, and hands-on work along my journey.
+        </p>
 
-          <article class="timeline-item">
-            <span class="experience-category">
-              {{ experience.get_category_display }}
-            </span>
-            <h2>{{ experience.title }}</h2>
-            <p class="experience-description">{{ experience.description }}</p>
-            {% if experience.is_ongoing %}
-            <p class="experience-status">Sedang berlangsung</p>
-            {% else %}
-            <p class="experience-status">Selesai</p>
-            {% endif %}
+        <div class="experience-list">
+          {% for experience in experience_list %}
+          <article class="experience-item timeline-item">
+            <div class="experience-content">
+              <span class="experience-category">
+                {{ experience.get_category_display }}
+              </span>
+              <h3 class="experience-title">{{ experience.title }}</h3>
+              <p class="experience-description">{{ experience.description }}</p>
+              {% if experience.is_ongoing %}
+              <p class="experience-status">Sedang berlangsung</p>
+              {% else %}
+              <p class="experience-status">Selesai</p>
+              {% endif %}
+            </div>
+
+            <div class="experience-thumb">
+              {% if experience.thumbnail %}
+              <div class="photo-frame-polaroid">
+                <img
+                  src="{{ experience.thumbnail }}"
+                  alt="{{ experience.title }}"
+                />
+              </div>
+              {% else %}
+              <div class="photo-frame-polaroid experience-thumb-placeholder">
+                <span>{{ experience.get_category_display|truncatechars:12 }}</span>
+              </div>
+              {% endif %}
+            </div>
           </article>
           {% empty %}
           <p class="empty-state">Belum ada pengalaman yang ditambahkan.</p>
