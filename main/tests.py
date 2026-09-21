@@ -92,6 +92,30 @@ class MainTest(TestCase):
         self.assertContains(response, "Selesai")
         self.assertNotContains(response, "Sedang berlangsung")
 
+    def test_get_experiences_json(self):
+        response = self.client.get(reverse("main:get_experiences_json"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/json")
+        self.assertEqual(len(response.json()), 1)
+        self.assertEqual(response.json()[0]["fields"]["title"], self.experience.title)
+
+    def test_delete_experience(self):
+        response = self.client.post(
+            reverse("main:delete_experience", args=[self.experience.id])
+        )
+
+        self.assertRedirects(response, reverse("main:show_experience"))
+        self.assertFalse(Experience.objects.filter(pk=self.experience.id).exists())
+
+    def test_delete_experience_requires_post(self):
+        response = self.client.get(
+            reverse("main:delete_experience", args=[self.experience.id])
+        )
+
+        self.assertRedirects(response, reverse("main:show_experience"))
+        self.assertTrue(Experience.objects.filter(pk=self.experience.id).exists())
+
     def test_project_page(self):
         response = self.client.get(reverse("main:show_project"))
 

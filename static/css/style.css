@@ -1,4 +1,11 @@
 /* Reset & Base Styles */
+:root {
+  --paper: #18181b;
+  --line: rgba(255, 255, 255, 0.14);
+  --ink: #e4e4e7;
+  --radius: 10px;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -689,6 +696,11 @@ section {
   font-weight: 500;
 }
 
+.experience-actions {
+  display: flex;
+  margin-top: 1rem;
+}
+
 /* Contact Section */
 #contact {
   background: transparent;
@@ -781,6 +793,14 @@ footer {
     padding: 28px 4px;
   }
 
+  .project-card-actions {
+    margin-top: 0;
+  }
+
+  .project-actions {
+    justify-content: flex-start;
+  }
+
   .project-thumb .photo-frame-polaroid img,
   .project-thumb-placeholder {
     height: 180px;
@@ -826,4 +846,318 @@ footer {
   text-decoration: none;
   font-weight: 600;
   font-size: 0.9rem;
+}
+
+.project-form,
+.experience-form {
+  width: 100%;
+  max-width: 100%;
+  margin-top: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.4rem;
+  font-weight: 700;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.7rem;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  font: inherit;
+  transition:
+    border-color 0.2s ease,
+    outline-color 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+  outline: 2px solid var(--accent);
+  border-color: var(--accent);
+}
+
+.form-error {
+  color: #b42318;
+  font-size: 0.85rem;
+  margin-top: 0.35rem;
+}
+
+.button {
+  display: inline-block;
+  height: fit-content;
+  border: 0;
+  border-radius: var(--radius);
+  padding: 0.65rem 1rem;
+  background: var(--accent);
+  color: white;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.button-secondary {
+  background: var(--ink);
+}
+
+.project-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.project-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.project-grid .experience-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.project-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid black;
+  border-radius: var(--radius);
+}
+
+.project-header h1 {
+  margin-bottom: 0;
+}
+
+.project-add-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.project-add-button span {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.project-search {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.project-search__input {
+  width: 100%;
+  min-width: 0;
+  padding: 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+}
+
+.project-search__input:focus {
+  outline: 2px solid var(--accent);
+  border-color: var(--accent);
+}
+
+.project-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-top: 1rem;
+}
+
+.project-actions .button {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.project-card-actions {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.hide {
+  display: none !important;
+}
+
+.project-delete-trigger {
+  margin-top: 0;
+}
+
+.project-actions {
+  justify-content: flex-end;
+  margin-top: 0;
+}
+
+.project-delete-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 1rem;
+  border: 0;
+  background: transparent;
+  z-index: 10;
+  align-items: center;
+  justify-content: center;
+}
+
+.project-delete-modal:popover-open {
+  display: flex;
+}
+
+.project-delete-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  padding: 0;
+  background: rgba(9, 9, 11, 0.72);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  cursor: default;
+}
+
+.project-delete-modal__content {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 500px);
+  padding: 2rem;
+  background: #ffffff;
+  color: #18181b;
+  border: 1px solid #e4e4e7;
+  border-radius: 16px;
+  box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.45);
+}
+
+.project-delete-modal__content h2 {
+  margin: 0 0 0.75rem;
+  color: #18181b;
+  font-family:
+    "Space Grotesk",
+    -apple-system,
+    sans-serif;
+  font-size: 1.5rem;
+}
+
+.project-delete-modal__close {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid #d4d4d8;
+  border-radius: 999px;
+  padding: 0;
+  background: #f4f4f5;
+  color: #52525b;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.project-delete-modal__close:hover {
+  background: #e4e4e7;
+  color: #18181b;
+}
+
+.project-delete-modal__message {
+  margin: 0;
+  color: #52525b;
+  line-height: 1.6;
+  padding-right: 2rem;
+}
+
+.project-delete-modal__message strong {
+  color: #18181b;
+}
+
+.project-delete-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #e4e4e7;
+}
+
+.project-delete-modal__actions form {
+  margin: 0;
+}
+
+.project-delete-modal__actions .button-secondary {
+  background: #f4f4f5;
+  color: #27272a;
+  border: 1px solid #d4d4d8;
+}
+
+.project-delete-modal__actions .button-danger {
+  background: #c2412d;
+  color: #ffffff;
+}
+
+.button-danger {
+  background: #c2412d;
+}
+
+@media (max-width: 600px) {
+  .project-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .project-add-button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .project-search {
+    flex-direction: column;
+  }
+
+  .project-search .button {
+    width: 100%;
+  }
+
+  .project-delete-modal {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .project-delete-modal__content {
+    width: 100%;
+    padding: 1.25rem;
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+
+  .project-delete-modal__actions {
+    flex-direction: column-reverse;
+  }
+
+  .project-delete-modal__actions .button {
+    width: 100%;
+    text-align: center;
+  }
 }

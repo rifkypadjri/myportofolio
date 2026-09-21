@@ -52,3 +52,23 @@ berikut juga saya lampirkan:
 2. https://share.gemini.google/A6fGP72bzH1c
 3. https://share.gemini.google/ZQoK8cS8gmVF
 4. https://drive.google.com/file/d/12EcNLDJ1YtgdOL5P9TbUPAlC8NCOGPh9/view?usp=sharing
+
+
+### tugas 3
+
+1. ModelForm pada Django digunakan untuk mempermudah pembuatan form yg terkait suatu model. Dengan ModelForm, field pada form dapat dibuat berdasarkan field yang terdapat pada model sehingga kita tidak perlu mendefinisikan setiap input secara manual menggunakan HTML. Selain mengurangi kode yang berulang, ModelForm juga menyediakan validasi data secara otomatis berdasarkan tipe dan aturan field pada model. Data yang telah tervalidasi juga dapat disimpan ke database menggunakan method seperti form.save(). Hal ini membuat implementasi fitur create maupun update menjadi lebih sederhana dan konsisten dengan struktur model yang digunakan.
+
+Sementara itu, {% csrf_token %} digunakan untuk melindungi form dari serangan Cross-Site Request Forgery (CSRF). Serangan CSRF terjadi ketika pengguna yang sudah terautentikasi dibuat mengirimkan request ke suatu aplikasi tanpa sepengetahuannya. Django menghasilkan token unik yang kemudian disertakan pada form dan diverifikasi ketika request, khususnya request POST, diterima oleh server. Dengan demikian, server dapat memastikan bahwa request tersebut berasal dari form yang sah pada aplikasi dan bukan request yang dibuat oleh pihak lain.
+
+2. JSON (JavaScript Object Notation) lebih sering digunakan dalam pengembangan aplikasi web modern karena formatnya lebih sederhana dan ringkas dibandingkan XML. JSON merepresentasikan data menggunakan struktur seperti object dan array sehingga lebih mudah dibaca serta diproses oleh aplikasi. Sebaliknya, XML menggunakan tag pembuka dan penutup sehingga representasi data yang sama umumnya membutuhkan struktur yang lebih panjang.
+
+Selain itu, struktur JSON sangat sesuai dengan struktur data yang digunakan pada JavaScript. JSON dapat diubah menjadi object JavaScript menggunakan JSON.parse() dan sebaliknya dapat dikonversi menggunakan JSON.stringify(). Hal tersebut membuat JSON praktis digunakan dalam komunikasi antara client dan server, terutama pada REST API dan aplikasi web yang melakukan pertukaran data secara dinamis. Ukurannya yang relatif lebih ringkas juga mengurangi data tambahan yang perlu dikirimkan dibandingkan XML. Walaupun XML tetap berguna pada sistem tertentu yang membutuhkan fitur seperti namespaces atau skema dokumen yang kompleks, JSON umumnya lebih praktis untuk kebutuhan pertukaran data pada aplikasi web modern.
+
+3. Ketika client mengakses endpoint JSON pada aplikasi, Django terlebih dahulu menerima HTTP request dan mencocokkan URL tersebut dengan pola yang terdapat pada urls.py. URL kemudian mengarahkan request menuju fungsi view yang sesuai. Di dalam view, data yang diperlukan diambil dari database melalui Django ORM, misalnya menggunakan Model.objects.all(). Hasil operasi tersebut masih berupa QuerySet yang berisi instance model Python dan belum dapat langsung dikirimkan sebagai JSON.
+
+Oleh karena itu, diperlukan proses serialization, yaitu proses mengubah object atau instance model Django menjadi representasi data yang dapat dikirimkan, seperti JSON. Serializer akan mengubah data model beserta field-field yang diperlukan menjadi struktur yang dapat direpresentasikan dalam format JSON. Setelah proses serialization selesai, view mengembalikan data tersebut melalui HTTP response dengan content type JSON. Data tersebut kemudian dapat diterima oleh client, diubah kembali atau di-deserialize menjadi struktur data yang dapat digunakan, lalu ditampilkan pada halaman web.
+
+4. AI Disclosure
+Dalam pengerjaan Tugas 3, saya menggunakan ChatGPT (OpenAI) sebagai alat bantu dalam proses pembelajaran dan pengembangan. AI digunakan terutama untuk membantu memahami requirement tugas, menyusun strategi implementasi berdasarkan rubrik penilaian, menjelaskan konsep yang berkaitan dengan Django seperti ModelForm, CRUD, template inheritance, CSRF, serialization, dan JSON data delivery, serta membantu menyusun jawaban pertanyaan reflektif pada README.
+
+Strategi prompting yang saya gunakan adalah memberikan konteks tugas dan requirement terlebih dahulu, kemudian meminta AI untuk menjelaskan atau memberikan saran terhadap bagian tertentu secara spesifik. Saya tidak langsung menggunakan seluruh keluaran AI sebagai implementasi akhir, tetapi menggunakannya sebagai referensi untuk memahami pendekatan yang dapat digunakan dan kemudian menyesuaikannya dengan struktur proyek yang telah saya buat.
