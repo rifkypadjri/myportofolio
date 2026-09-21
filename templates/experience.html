@@ -23,6 +23,9 @@
             {% else %}
             <p class="experience-status">Selesai</p>
             {% endif %}
+            <div class="experience-actions">
+              {% include "components/experience_delete_modal.html" with experience=experience %}
+            </div>
           </div>
 
           <div class="experience-thumb">
@@ -42,9 +45,11 @@
             {% endif %}
           </div>
         </article>
-        {% empty %}
+        {% empty %} {% if title_query %}
+        <p class="empty-state">Tidak ada pengalaman dengan nama tersebut.</p>
+        {% else %}
         <p class="empty-state">Belum ada pengalaman yang ditambahkan.</p>
-        {% endfor %}
+        {% endif %} {% endfor %}
       </div>
     </div>
   </section>

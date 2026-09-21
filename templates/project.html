@@ -29,17 +29,16 @@
             <h3 class="project-title">{{ project.title }}</h3>
             <p class="project-description">{{ project.description }}</p>
           </div>
-        </article>
 
-        <div class="project-card-actions">
-          <div class="project-actions">
-            {% if project.project_url %}
-            <a href="{{ project.project_url }}" class="button">Lihat Project</a>
-            {% endif %}
-            <!-- prettier-ignore -->
-            {% include "components/project_delete_modal.html" with project=project %}
+          <div class="project-card-actions">
+            <div class="project-actions">
+              {% if project.project_url %}
+              <a href="{{ project.project_url }}" class="button">Lihat Project</a>
+              {% endif %}
+              {% include "components/project_delete_modal.html" with project=project %}
+            </div>
           </div>
-        </div>
+        </article>
 
         {% empty %} {% if title_query %}
         <p class="empty-state">Tidak ada proyek dengan nama tersebut.</p>
