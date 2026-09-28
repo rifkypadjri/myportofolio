@@ -23,9 +23,11 @@
             {% else %}
             <p class="experience-status">Selesai</p>
             {% endif %}
+            {% if user.is_superuser %}
             <div class="experience-actions">
               {% include "components/experience_delete_modal.html" with experience=experience %}
             </div>
+            {% endif %}
           </div>
 
           <div class="experience-thumb">

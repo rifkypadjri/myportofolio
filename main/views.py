@@ -2,6 +2,7 @@ from django.shortcuts import render
 
 from main.models import Experience, Achievement, Project
 from main.forms import ExperienceForm, ProjectForm
+from main.permissions import superuser_create_required, superuser_delete_required
 
 from django.contrib import messages
 from django.core import serializers
@@ -15,14 +16,10 @@ from django.shortcuts import redirect, render
 import datetime
 
 from django.contrib.auth.decorators import login_required  # Tambahkan baris ini
-from django.core.exceptions import PermissionDenied        # Tambahkan baris ini
 
 
-@login_required(login_url="/login/")  # Tambahkan baris ini
+@superuser_create_required
 def create_project(request):
-
-    if not request.user.is_superuser:
-        raise PermissionDenied
     form = ProjectForm(request.POST or None)
 
     if request.method == "POST" and form.is_valid():
@@ -37,9 +34,8 @@ def create_project(request):
     return render(request, "projects_form.html", context)
 
 
+@superuser_create_required
 def create_experience(request):
-    if not request.user.is_superuser:
-        raise PermissionDenied
     form = ExperienceForm(request.POST or None)
 
     if request.method == "POST" and form.is_valid():
@@ -143,7 +139,7 @@ def show_projects(request):
     }
     return render(request, "project.html", context)
 
-@login_required(login_url="/login/")
+@superuser_delete_required
 def delete_project(request, project_id):
     project = get_object_or_404(Project, pk=project_id)
 
@@ -155,6 +151,7 @@ def delete_project(request, project_id):
     return redirect("main:show_project")
 
 
+@superuser_delete_required
 def delete_experience(request, experience_id):
     experience = get_object_or_404(Experience, pk=experience_id)
 

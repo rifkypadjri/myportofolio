@@ -8,7 +8,7 @@ urlpatterns = [
     path("experience/", show_experience, name="show_experience"),
     path("experience/add/", create_experience, name="create_experience"),
     path(
-        "experiences/<uuid:experience_id>/delet e/",
+        "experiences/<uuid:experience_id>/delete/",
         delete_experience,
         name="delete_experience",
     ),

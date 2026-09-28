@@ -1,8 +1,16 @@
+from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
 from main.models import Achievement, Experience, Project
+from main.permissions import (
+    can_create_content,
+    can_delete_content,
+    can_update_content,
+    is_editor,
+)
 
 
 class MainTest(TestCase):
@@ -100,15 +108,20 @@ class MainTest(TestCase):
         self.assertEqual(len(response.json()), 1)
         self.assertEqual(response.json()[0]["fields"]["title"], self.experience.title)
 
-    def test_delete_experience(self):
+    def test_delete_experience_requires_authentication(self):
         response = self.client.post(
             reverse("main:delete_experience", args=[self.experience.id])
         )
 
-        self.assertRedirects(response, reverse("main:show_experience"))
-        self.assertFalse(Experience.objects.filter(pk=self.experience.id).exists())
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.url.startswith(reverse("main:login")))
+        self.assertTrue(Experience.objects.filter(pk=self.experience.id).exists())
 
     def test_delete_experience_requires_post(self):
+        superuser = get_user_model().objects.create_superuser(
+            username="delete-test-admin", password="test-password"
+        )
+        self.client.force_login(superuser)
         response = self.client.get(
             reverse("main:delete_experience", args=[self.experience.id])
         )
@@ -133,7 +146,7 @@ class MainTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "project.html")
-        self.assertContains(response, "Belum ada project yang ditambahkan.")
+        self.assertContains(response, "Belum ada proyek yang ditambahkan.")
         self.assertNotContains(response, "FoundrOS")
 
     def test_achievement_page(self):
@@ -157,3 +170,73 @@ class MainTest(TestCase):
         self.assertTemplateUsed(response, "achievement.html")
         self.assertContains(response, "Belum ada prestasi yang ditambahkan.")
         self.assertNotContains(response, "Datavidia Finalist")
+
+
+class AuthorizationTest(TestCase):
+    def setUp(self):
+        user_model = get_user_model()
+        self.regular_user = user_model.objects.create_user(
+            username="regular", password="test-password"
+        )
+        self.editor = user_model.objects.create_user(
+            username="editor", password="test-password"
+        )
+        self.editor.groups.add(Group.objects.create(name="Editor"))
+        self.superuser = user_model.objects.create_superuser(
+            username="admin", password="test-password"
+        )
+        self.project = Project.objects.create(
+            title="Authorization Test",
+            description="Project used to test role restrictions.",
+        )
+
+    def test_role_helpers(self):
+        self.assertFalse(is_editor(self.regular_user))
+        self.assertTrue(is_editor(self.editor))
+
+        self.assertFalse(can_create_content(self.regular_user))
+        self.assertFalse(can_create_content(self.editor))
+        self.assertTrue(can_create_content(self.superuser))
+
+        self.assertFalse(can_update_content(self.regular_user))
+        self.assertTrue(can_update_content(self.editor))
+        self.assertTrue(can_update_content(self.superuser))
+
+        self.assertFalse(can_delete_content(self.regular_user))
+        self.assertFalse(can_delete_content(self.editor))
+        self.assertTrue(can_delete_content(self.superuser))
+
+    def test_regular_user_and_editor_cannot_create(self):
+        create_url = reverse("main:create_project")
+
+        for user in (self.regular_user, self.editor):
+            self.client.force_login(user)
+            self.assertEqual(self.client.get(create_url).status_code, 403)
+
+    def test_regular_user_and_editor_cannot_delete(self):
+        delete_url = reverse("main:delete_project", args=[self.project.id])
+
+        for user in (self.regular_user, self.editor):
+            self.client.force_login(user)
+            self.assertEqual(self.client.post(delete_url).status_code, 403)
+
+        self.assertTrue(Project.objects.filter(pk=self.project.id).exists())
+
+    def test_superuser_can_create_and_delete(self):
+        self.client.force_login(self.superuser)
+
+        create_response = self.client.post(
+            reverse("main:create_project"),
+            {
+                "title": "Created by admin",
+                "description": "Allowed operation",
+                "thumbnail": "",
+            },
+        )
+        self.assertRedirects(create_response, reverse("main:show_project"))
+
+        delete_response = self.client.post(
+            reverse("main:delete_project", args=[self.project.id])
+        )
+        self.assertRedirects(delete_response, reverse("main:show_project"))
+        self.assertFalse(Project.objects.filter(pk=self.project.id).exists())
