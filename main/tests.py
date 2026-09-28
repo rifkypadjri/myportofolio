@@ -110,6 +110,47 @@ class MainTest(TestCase):
         self.assertEqual(response["Content-Type"], "application/json")
         self.assertEqual(len(response.json()), 1)
         self.assertEqual(response.json()[0]["fields"]["title"], self.experience.title)
+        self.assertEqual(
+            set(response.json()[0]["fields"]),
+            {
+                "title",
+                "description",
+                "category",
+                "thumbnail",
+                "started_at",
+                "ended_at",
+            },
+        )
+
+    def test_projects_json_excludes_star_users_and_authentication_data(self):
+        user = get_user_model().objects.create_user(
+            username="json-user",
+            password="secret-test-password",
+            email="json-user@example.com",
+        )
+        self.project.starred_by.add(user)
+        self.client.force_login(user)
+
+        response = self.client.get(reverse("main:get_projects_json"))
+        payload = response.json()
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/json")
+        self.assertEqual(len(payload), 1)
+        self.assertEqual(
+            set(payload[0]["fields"]),
+            {"title", "description", "thumbnail"},
+        )
+        response_text = response.content.decode("utf-8")
+        for sensitive_value in (
+            "starred_by",
+            "json-user",
+            "json-user@example.com",
+            "secret-test-password",
+            "session",
+        ):
+            with self.subTest(sensitive_value=sensitive_value):
+                self.assertNotIn(sensitive_value, response_text)
 
     def test_delete_experience_requires_authentication(self):
         response = self.client.post(
@@ -393,6 +434,21 @@ class AuthorizationTest(TestCase):
                     f"Experience updated by {user.username}",
                 )
 
+    def test_every_authenticated_role_can_star(self):
+        for user in (self.regular_user, self.editor, self.superuser):
+            self.client.force_login(user)
+            response = self.client.post(
+                reverse("main:toggle_star", args=[self.project.id])
+            )
+
+            with self.subTest(user=user.username):
+                self.assertRedirects(response, reverse("main:show_project"))
+                self.assertTrue(
+                    self.project.starred_by.filter(pk=user.pk).exists()
+                )
+
+        self.assertEqual(self.project.starred_by.count(), 3)
+
     def test_regular_user_and_editor_cannot_delete(self):
         for user in (self.regular_user, self.editor):
             self.client.force_login(user)
@@ -577,3 +633,36 @@ class ProjectStarTest(TestCase):
             with self.subTest(user=user.username):
                 self.assertContains(response, f'action="{self.toggle_url}"')
                 self.assertContains(response, 'name="csrfmiddlewaretoken"')
+
+
+class SessionSecurityTest(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="session-user", password="test-password"
+        )
+
+    def test_logout_is_post_only_and_form_contains_csrf_token(self):
+        self.client.force_login(self.user)
+        logout_url = reverse("main:logout")
+
+        page_response = self.client.get(reverse("main:show_main"))
+        self.assertContains(page_response, 'method="post"')
+        self.assertContains(page_response, f'action="{logout_url}"')
+        self.assertContains(page_response, 'name="csrfmiddlewaretoken"')
+
+        get_response = self.client.get(logout_url)
+        self.assertEqual(get_response.status_code, 405)
+        self.assertIn("_auth_user_id", self.client.session)
+
+        post_response = self.client.post(logout_url)
+        self.assertRedirects(post_response, reverse("main:show_main"))
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_logout_rejects_post_without_csrf_token(self):
+        csrf_client = Client(enforce_csrf_checks=True)
+        csrf_client.force_login(self.user)
+
+        response = csrf_client.post(reverse("main:logout"))
+
+        self.assertEqual(response.status_code, 403)
+        self.assertIn("_auth_user_id", csrf_client.session)

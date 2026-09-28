@@ -172,7 +172,11 @@ def get_projects_json(request):
     if title_query:
         projects = projects.filter(title__icontains=title_query)
 
-    projects_json = serializers.serialize("json", projects,  use_natural_foreign_keys=True)
+    projects_json = serializers.serialize(
+        "json",
+        projects,
+        fields=("title", "description", "thumbnail"),
+    )
     return HttpResponse(projects_json, content_type="application/json")
 
 
@@ -183,7 +187,18 @@ def get_experiences_json(request):
     if title_query:
         experiences = experiences.filter(title__icontains=title_query)
 
-    experiences_json = serializers.serialize("json", experiences)
+    experiences_json = serializers.serialize(
+        "json",
+        experiences,
+        fields=(
+            "title",
+            "description",
+            "category",
+            "thumbnail",
+            "started_at",
+            "ended_at",
+        ),
+    )
     return HttpResponse(experiences_json, content_type="application/json")
 
 def show_projects(request):
@@ -262,6 +277,7 @@ def login_user(request):
     }
     return render(request, "login.html", context)
 
+@require_POST
 def logout_user(request):
     logout(request)
     response = redirect("main:show_main")

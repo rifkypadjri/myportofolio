@@ -26,7 +26,16 @@
             <li><a href="{% url 'main:show_project' %}">Projects</a></li>
             {% if user.is_authenticated %}
             <li><span class="nav-user">{{ user.username }}</span></li>
-            <li><a href="{% url 'main:logout' %}">Logout</a></li>
+            <li>
+              <form
+                method="post"
+                action="{% url 'main:logout' %}"
+                class="nav-logout-form"
+              >
+                {% csrf_token %}
+                <button type="submit" class="nav-logout-button">Logout</button>
+              </form>
+            </li>
             {% else %}
             <li><a href="{% url 'main:login' %}">Login</a></li>
             <li><a href="{% url 'main:register' %}">Register</a></li>

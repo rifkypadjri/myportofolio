@@ -82,7 +82,8 @@ nav {
 }
 
 /* Tombol Link Di Dalam Navigasi */
-.nav-links a {
+.nav-links a,
+.nav-logout-button {
   color: #a1a1aa;
   text-decoration: none;
   font-weight: 500;
@@ -91,13 +92,21 @@ nav {
   border-radius: 9999px;
   transition: all 0.25s ease;
   display: inline-block;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
 }
 
 /* Efek Hover / Active */
 .nav-links a:hover,
-.nav-links a.active {
+.nav-links a.active,
+.nav-logout-button:hover {
   color: #ffffff;
   background: rgba(255, 255, 255, 0.15);
+}
+
+.nav-logout-form {
+  display: inline;
 }
 
 .nav-user {
@@ -773,7 +782,8 @@ footer {
     gap: 5px;
   }
 
-  .nav-links a {
+  .nav-links a,
+  .nav-logout-button {
     padding: 6px 12px;
     font-size: 0.8rem;
   }
