@@ -10,6 +10,7 @@ from main.permissions import (
 
 from django.contrib import messages
 from django.core import serializers
+from django.db.models import BooleanField, Count, Exists, OuterRef, Value
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
@@ -133,10 +134,25 @@ def show_experience(request):
     return render(request, "experience.html", context)
 
 def show_project(request):
+    projects = Project.objects.annotate(star_count=Count("starred_by"))
+
+    if request.user.is_authenticated:
+        user_star = Project.starred_by.through.objects.filter(
+            project_id=OuterRef("pk"),
+            user_id=request.user.pk,
+        )
+        projects = projects.annotate(
+            starred_by_current_user=Exists(user_star)
+        )
+    else:
+        projects = projects.annotate(
+            starred_by_current_user=Value(False, output_field=BooleanField())
+        )
+
     context = {
         "name": "Muhammad Rifky Padjri",
         "npm": "2506585800",
-        "project_list": Project.objects.all(),
+        "project_list": projects,
     }
     return render(request, "project.html", context)
 
@@ -252,16 +268,14 @@ def logout_user(request):
     response.delete_cookie('last_login')
     return response
 
-@login_required(login_url="/login/")
+@login_required(login_url="main:login")
+@require_POST
 def toggle_star(request, project_id):
     project = get_object_or_404(Project, pk=project_id)
 
-    if request.method == "POST":
-        # Kalau akun ini sudah pernah memberi star, batalkan star-nya.
-        # Kalau belum, tambahkan star.
-        if request.user in project.starred_by.all():
-            project.starred_by.remove(request.user)
-        else:
-            project.starred_by.add(request.user)
+    if project.starred_by.filter(pk=request.user.pk).exists():
+        project.starred_by.remove(request.user)
+    else:
+        project.starred_by.add(request.user)
 
-    return redirect("main:show_projects")
+    return redirect("main:show_project")

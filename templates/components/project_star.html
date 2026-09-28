@@ -1,10 +1,29 @@
-<form method="post" action="{% url 'main:toggle_star' project.id %}" class="star-form">
+{% if user.is_authenticated %}
+  <form
+    method="post"
+    action="{% url 'main:toggle_star' project.id %}"
+    class="star-form"
+  >
     {% csrf_token %}
-    <button type="submit"
-            class="button button-star{% if user in project.starred_by.all %} is-starred{% endif %}"
-            title="{% if project.starred_by.all %}Dibintangi oleh {{ project.starred_by.all|join:', ' }}{% else %}Jadilah yang pertama memberi star{% endif %}">
-        <span aria-hidden="true">★</span>
-        {% if user in project.starred_by.all %}Unstar{% else %}Star{% endif %}
-        <span class="star-count">{{ project.starred_by.count }}</span>
+    <button
+      type="submit"
+      class="button button-star{% if project.starred_by_current_user %} is-starred{% endif %}"
+      aria-pressed="{% if project.starred_by_current_user %}true{% else %}false{% endif %}"
+      title="{% if project.starred_by_current_user %}Hapus star dari proyek ini{% else %}Beri star pada proyek ini{% endif %}"
+    >
+      <span aria-hidden="true">★</span>
+      {% if project.starred_by_current_user %}Unstar{% else %}Star{% endif %}
+      <span class="star-count">{{ project.star_count }}</span>
     </button>
-</form>
+  </form>
+{% else %}
+  <a
+    href="{% url 'main:login' %}?next={{ request.get_full_path|urlencode }}"
+    class="button button-star"
+    title="Login untuk memberi star"
+  >
+    <span aria-hidden="true">★</span>
+    Login untuk Star
+    <span class="star-count">{{ project.star_count }}</span>
+  </a>
+{% endif %}

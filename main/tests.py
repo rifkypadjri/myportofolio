@@ -1,7 +1,9 @@
+import uuid
+
 from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
-from django.test import TestCase
+from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
 
@@ -472,3 +474,106 @@ class AuthorizationTest(TestCase):
         )
 
         self.assertRedirects(response, reverse("main:show_main"))
+
+
+class ProjectStarTest(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="star-user", password="test-password"
+        )
+        self.project = Project.objects.create(
+            title="Star Test",
+            description="Project used to test starring.",
+        )
+        self.toggle_url = reverse("main:toggle_star", args=[self.project.id])
+
+    def test_authenticated_user_can_toggle_star(self):
+        self.client.force_login(self.user)
+
+        add_response = self.client.post(self.toggle_url)
+        self.assertRedirects(add_response, reverse("main:show_project"))
+        self.assertTrue(self.project.starred_by.filter(pk=self.user.pk).exists())
+        self.assertEqual(self.project.starred_by.count(), 1)
+
+        remove_response = self.client.post(self.toggle_url)
+        self.assertRedirects(remove_response, reverse("main:show_project"))
+        self.assertFalse(self.project.starred_by.filter(pk=self.user.pk).exists())
+        self.assertEqual(self.project.starred_by.count(), 0)
+
+    def test_guest_is_redirected_to_login_without_changing_star(self):
+        response = self.client.post(self.toggle_url)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.url.startswith(reverse("main:login")))
+        self.assertFalse(self.project.starred_by.exists())
+
+    def test_get_does_not_change_star(self):
+        self.client.force_login(self.user)
+
+        response = self.client.get(self.toggle_url)
+
+        self.assertEqual(response.status_code, 405)
+        self.assertFalse(self.project.starred_by.exists())
+
+    def test_nonexistent_project_returns_404(self):
+        self.client.force_login(self.user)
+        missing_url = reverse("main:toggle_star", args=[uuid.uuid4()])
+
+        response = self.client.post(missing_url)
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_toggle_star_requires_csrf_token(self):
+        csrf_client = Client(enforce_csrf_checks=True)
+        csrf_client.force_login(self.user)
+
+        response = csrf_client.post(self.toggle_url)
+
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(self.project.starred_by.exists())
+
+    def test_guest_sees_star_count_and_login_link_instead_of_post_form(self):
+        self.project.starred_by.add(self.user)
+
+        response = self.client.get(reverse("main:show_project"))
+
+        self.assertContains(
+            response,
+            f'href="{reverse("main:login")}?next=',
+            html=False,
+        )
+        self.assertContains(response, "Login untuk Star")
+        self.assertContains(response, '<span class="star-count">1</span>')
+        self.assertNotContains(response, f'action="{self.toggle_url}"')
+
+    def test_authenticated_user_sees_post_form_csrf_and_star_status(self):
+        self.client.force_login(self.user)
+
+        unstarred_response = self.client.get(reverse("main:show_project"))
+        self.assertContains(unstarred_response, f'action="{self.toggle_url}"')
+        self.assertContains(unstarred_response, 'name="csrfmiddlewaretoken"')
+        self.assertContains(unstarred_response, 'aria-pressed="false"')
+        self.assertContains(
+            unstarred_response, '<span class="star-count">0</span>'
+        )
+
+        self.project.starred_by.add(self.user)
+        starred_response = self.client.get(reverse("main:show_project"))
+        self.assertContains(starred_response, 'aria-pressed="true"')
+        self.assertContains(starred_response, "Unstar")
+        self.assertContains(starred_response, '<span class="star-count">1</span>')
+
+    def test_regular_editor_and_superuser_all_receive_star_form(self):
+        editor = get_user_model().objects.create_user(username="star-editor")
+        editor.groups.add(Group.objects.create(name="Editor"))
+        superuser = get_user_model().objects.create_superuser(
+            username="star-admin", password="test-password"
+        )
+
+        for user in (self.user, editor, superuser):
+            self.client.force_login(user)
+            response = self.client.get(reverse("main:show_project"))
+
+            with self.subTest(user=user.username):
+                self.assertContains(response, f'action="{self.toggle_url}"')
+                self.assertContains(response, 'name="csrfmiddlewaretoken"')
