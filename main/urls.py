@@ -18,4 +18,13 @@ urlpatterns = [
     path("api/projects/", get_projects_json, name="get_projects_json"),
     path("api/experiences/", get_experiences_json, name="get_experiences_json"),
     path("projects/<uuid:project_id>/delete/",delete_project,name="delete_project"),
+    path("register/", register, name="register"),
+    path("login/", login_user, name="login"),
+    path("logout/", logout_user, name="logout"),
+    # Tambahkan path ini ke dalam urlpatterns
+    path(
+        "projects/<uuid:project_id>/star/",
+        toggle_star,
+        name="toggle_star",
+    ),
 ]

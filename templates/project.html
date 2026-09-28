@@ -35,7 +35,10 @@
               {% if project.project_url %}
               <a href="{{ project.project_url }}" class="button">Lihat Project</a>
               {% endif %}
+              {% include "components/project_star.html" with project=project %}
+              {% if user.is_superuser %} 
               {% include "components/project_delete_modal.html" with project=project %}
+              {% endif %}
             </div>
           </div>
         </article>
@@ -46,6 +49,13 @@
         <p class="empty-state">Belum ada proyek yang ditambahkan.</p>
         {% endif %} {% endfor %}
       </div>
+      {% if user.is_superuser %}  {# Tambahkan baris ini #}
+          <a href="{% url 'main:create_project' %}"
+            class="button project-add-button">
+              <span aria-hidden="true">+</span>
+              Tambah Proyek
+          </a>
+      {% endif %}            
     </div>
   </section>
 </main>
