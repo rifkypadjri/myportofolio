@@ -72,3 +72,54 @@ Oleh karena itu, diperlukan proses serialization, yaitu proses mengubah object a
 Dalam pengerjaan Tugas 3, saya menggunakan ChatGPT (OpenAI) sebagai alat bantu dalam proses pembelajaran dan pengembangan. AI digunakan terutama untuk membantu memahami requirement tugas, menyusun strategi implementasi berdasarkan rubrik penilaian, menjelaskan konsep yang berkaitan dengan Django seperti ModelForm, CRUD, template inheritance, CSRF, serialization, dan JSON data delivery, serta membantu menyusun jawaban pertanyaan reflektif pada README.
 
 Strategi prompting yang saya gunakan adalah memberikan konteks tugas dan requirement terlebih dahulu, kemudian meminta AI untuk menjelaskan atau memberikan saran terhadap bagian tertentu secara spesifik. Saya tidak langsung menggunakan seluruh keluaran AI sebagai implementasi akhir, tetapi menggunakannya sebagai referensi untuk memahami pendekatan yang dapat digunakan dan kemudian menyesuaikannya dengan struktur proyek yang telah saya buat.
+
+
+### Tugas 4
+
+#### Implemented Features
+
+1. **Authentication**
+
+   Aplikasi menggunakan sistem autentikasi bawaan Django, yaitu `User`, `AuthenticationForm`, `UserCreationForm`, `login`, `logout`, session middleware, serta decorator `login_required`. User dapat melakukan registrasi, login, dan logout. Logout hanya menerima request POST dan dilindungi CSRF.
+
+2. **Role dan authorization**
+
+   - **Guest** dapat membaca halaman portfolio dan endpoint JSON, tetapi harus login untuk melakukan operasi yang mengubah data atau memberikan star.
+   - **Regular User** dapat membaca data dan melakukan star/unstar, tetapi tidak dapat melakukan create, update, atau delete.
+   - **Editor** merupakan user yang tergabung dalam Django Group bernama `Editor`. Editor memiliki seluruh hak Regular User dan dapat melakukan update, tetapi tidak dapat melakukan create atau delete.
+   - **Superuser** dapat membaca, memberikan star, serta melakukan create, update, dan delete.
+
+   Pemeriksaan authorization diterapkan pada server melalui helper dan decorator di `main/permissions.py`. Conditional rendering pada template hanya digunakan untuk menyesuaikan tampilan tombol dan bukan sebagai pengganti pemeriksaan server-side. Policy yang sama juga diterapkan pada Django Admin untuk model portfolio.
+
+3. **Role-based CRUD**
+
+   Operasi create dan delete hanya dapat dilakukan superuser. Operasi update dapat dilakukan Editor dan superuser. Guest diarahkan ke halaman login, sedangkan authenticated user yang tidak memiliki role yang sesuai memperoleh respons HTTP 403 Forbidden. Delete hanya menerima request POST.
+
+4. **Star dan unstar Project**
+
+   Model `Project` memiliki relasi `ManyToManyField` terhadap Django User melalui field `starred_by`. User yang sudah login, termasuk Regular User, Editor, dan superuser, dapat menambah atau menghapus star melalui endpoint POST `toggle_star`. Relasi Many-to-Many menjaga agar pasangan Project dan User tidak tersimpan secara duplikat. Guest melihat link login, bukan form POST star.
+
+   Halaman Project menampilkan jumlah star dan status apakah current user sudah memberi star. Jumlah star dihitung dengan anotasi `Count`, sedangkan status current user ditentukan dengan anotasi `Exists` agar template tidak melakukan query relasi berulang untuk setiap Project.
+
+5. **Session dan cookie**
+
+   Django session digunakan untuk mempertahankan status autentikasi. Project juga memiliki cookie `last_login` dari implementasi tutorial sebelumnya. Cookie tersebut diatur setelah login, ditampilkan pada halaman utama, dan dihapus saat logout. Cookie `last_login` bukan pengganti session autentikasi Django.
+
+6. **Kompatibilitas endpoint JSON**
+
+   Endpoint berikut tetap tersedia sebagai endpoint read-only:
+
+   - `/api/projects/`
+   - `/api/experiences/`
+
+   Penambahan relasi star tidak mengubah format dasar serializer dan tidak mengekspos relasi `starred_by`. Field JSON dibatasi secara eksplisit sehingga password, session, credential autentikasi, dan informasi sensitif user tidak ikut dikirimkan.
+
+#### AI Disclosure
+
+Dalam pengerjaan Tugas 4, OpenAI Codex digunakan sebagai alat bantu pengembangan. Bantuan AI mencakup implementasi dan pengujian role-based CRUD, integrasi star/unstar, pengamanan endpoint JSON dan CSRF, dan membuat readme bagian implemented feature.
+
+Strategi prompting dilakukan secara bertahap. Setiap prompt memberikan konteks repository, satu fokus pekerjaan, matriks role atau requirement yang eksplisit, batasan seperti tidak melakukan refactor besar dan tidak membuat commit, serta permintaan verifikasi melalui Django system check dan test suite. Tahapan dipisahkan antara fondasi role, authorization server-side, conditional UI, model star, backend toggle, integrasi template, security audit, dan dokumentasi akhir.
+
+Jawaban AI tidak dianggap pasti benar dan digunakan mentah mentah. Selama sesi pengembangan, perubahan selalu diperiksa melalui pengecekan perubahan, `python manage.py check`, dan pengujian akses URL langsung. 
+
+Keterbatasan AI yang saya temukan adalah AI tidak dapat menggantikan pengujian visual/interaksi browser oleh developer, sehingga masih sangat dibutuhkan manusia untuk mengecek hasil tampilan dari web yang dibuat
