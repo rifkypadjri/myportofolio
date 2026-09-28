@@ -23,9 +23,20 @@
             {% else %}
             <p class="experience-status">Selesai</p>
             {% endif %}
+            {% if can_update_content or can_delete_content %}
             <div class="experience-actions">
+              {% if can_update_content %}
+              <a
+                href="{% url 'main:update_experience' experience.id %}"
+                class="button button-secondary"
+                >Edit Pengalaman</a
+              >
+              {% endif %}
+              {% if can_delete_content %}
               {% include "components/experience_delete_modal.html" with experience=experience %}
+              {% endif %}
             </div>
+            {% endif %}
           </div>
 
           <div class="experience-thumb">
@@ -51,6 +62,15 @@
         <p class="empty-state">Belum ada pengalaman yang ditambahkan.</p>
         {% endif %} {% endfor %}
       </div>
+      {% if can_create_content %}
+      <a
+        href="{% url 'main:create_experience' %}"
+        class="button project-add-button"
+      >
+        <span aria-hidden="true">+</span>
+        Tambah Pengalaman
+      </a>
+      {% endif %}
     </div>
   </section>
 </main>
