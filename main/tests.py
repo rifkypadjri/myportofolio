@@ -1,3 +1,4 @@
+from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.test import TestCase
@@ -126,7 +127,7 @@ class MainTest(TestCase):
             reverse("main:delete_experience", args=[self.experience.id])
         )
 
-        self.assertRedirects(response, reverse("main:show_experience"))
+        self.assertEqual(response.status_code, 405)
         self.assertTrue(Experience.objects.filter(pk=self.experience.id).exists())
 
     def test_project_page(self):
@@ -189,6 +190,11 @@ class AuthorizationTest(TestCase):
             title="Authorization Test",
             description="Project used to test role restrictions.",
         )
+        self.experience = Experience.objects.create(
+            title="Authorization Experience",
+            description="Experience used to test role restrictions.",
+            category="full-time",
+        )
 
     def test_role_helpers(self):
         self.assertFalse(is_editor(self.regular_user))
@@ -206,26 +212,202 @@ class AuthorizationTest(TestCase):
         self.assertFalse(can_delete_content(self.editor))
         self.assertTrue(can_delete_content(self.superuser))
 
-    def test_regular_user_and_editor_cannot_create(self):
-        create_url = reverse("main:create_project")
+    def test_admin_uses_the_same_role_policy(self):
+        model_admin = admin.site._registry[Project]
 
+        for user in (self.regular_user, self.editor, self.superuser):
+            request = type("Request", (), {"user": user})()
+            with self.subTest(user=user.username):
+                self.assertEqual(
+                    model_admin.has_add_permission(request),
+                    user.is_superuser,
+                )
+                self.assertEqual(
+                    model_admin.has_change_permission(request),
+                    user in (self.editor, self.superuser),
+                )
+                self.assertEqual(
+                    model_admin.has_delete_permission(request),
+                    user.is_superuser,
+                )
+
+    def test_regular_user_and_editor_cannot_create(self):
         for user in (self.regular_user, self.editor):
             self.client.force_login(user)
-            self.assertEqual(self.client.get(create_url).status_code, 403)
+            for create_url in (
+                reverse("main:create_project"),
+                reverse("main:create_experience"),
+            ):
+                with self.subTest(user=user.username, url=create_url):
+                    self.assertEqual(self.client.get(create_url).status_code, 403)
+
+    def test_guest_is_redirected_from_all_mutating_views(self):
+        protected_requests = (
+            ("get", reverse("main:create_project")),
+            ("get", reverse("main:create_experience")),
+            ("get", reverse("main:update_project", args=[self.project.id])),
+            ("get", reverse("main:update_experience", args=[self.experience.id])),
+            ("post", reverse("main:delete_project", args=[self.project.id])),
+            ("post", reverse("main:delete_experience", args=[self.experience.id])),
+        )
+
+        for method, url in protected_requests:
+            with self.subTest(method=method, url=url):
+                response = getattr(self.client, method)(url)
+                self.assertEqual(response.status_code, 302)
+                self.assertTrue(response.url.startswith(reverse("main:login")))
+
+    def test_read_views_are_public_for_every_role(self):
+        read_urls = (
+            reverse("main:show_project"),
+            reverse("main:show_experience"),
+            reverse("main:show_achievement"),
+            reverse("main:get_projects_json"),
+            reverse("main:get_experiences_json"),
+        )
+
+        for user in (None, self.regular_user, self.editor, self.superuser):
+            self.client.logout()
+            if user is not None:
+                self.client.force_login(user)
+            for url in read_urls:
+                with self.subTest(
+                    user=user.username if user else "guest", url=url
+                ):
+                    self.assertEqual(self.client.get(url).status_code, 200)
+
+    def test_crud_actions_are_rendered_for_the_correct_roles(self):
+        roles = (
+            ("guest", None, False, False, False),
+            ("regular", self.regular_user, False, False, False),
+            ("editor", self.editor, False, True, False),
+            ("superuser", self.superuser, True, True, True),
+        )
+
+        for role, user, can_create, can_update, can_delete in roles:
+            self.client.logout()
+            if user is not None:
+                self.client.force_login(user)
+
+            project_response = self.client.get(reverse("main:show_project"))
+            experience_response = self.client.get(reverse("main:show_experience"))
+
+            assertions = (
+                (
+                    project_response,
+                    reverse("main:create_project"),
+                    can_create,
+                ),
+                (
+                    experience_response,
+                    reverse("main:create_experience"),
+                    can_create,
+                ),
+                (
+                    project_response,
+                    reverse("main:update_project", args=[self.project.id]),
+                    can_update,
+                ),
+                (
+                    experience_response,
+                    reverse(
+                        "main:update_experience", args=[self.experience.id]
+                    ),
+                    can_update,
+                ),
+                (
+                    project_response,
+                    reverse("main:delete_project", args=[self.project.id]),
+                    can_delete,
+                ),
+                (
+                    experience_response,
+                    reverse(
+                        "main:delete_experience", args=[self.experience.id]
+                    ),
+                    can_delete,
+                ),
+            )
+
+            for response, action_url, should_be_visible in assertions:
+                with self.subTest(role=role, url=action_url):
+                    if should_be_visible:
+                        self.assertContains(response, action_url)
+                    else:
+                        self.assertNotContains(response, action_url)
+
+            with self.subTest(role=role, container="experience-actions"):
+                if can_update or can_delete:
+                    self.assertContains(experience_response, "experience-actions")
+                else:
+                    self.assertNotContains(
+                        experience_response, "experience-actions"
+                    )
+
+    def test_regular_user_cannot_update(self):
+        self.client.force_login(self.regular_user)
+
+        for update_url in (
+            reverse("main:update_project", args=[self.project.id]),
+            reverse("main:update_experience", args=[self.experience.id]),
+        ):
+            with self.subTest(url=update_url):
+                self.assertEqual(self.client.get(update_url).status_code, 403)
+
+    def test_editor_and_superuser_can_update(self):
+        for user in (self.editor, self.superuser):
+            self.client.force_login(user)
+            project_response = self.client.post(
+                reverse("main:update_project", args=[self.project.id]),
+                {
+                    "title": f"Updated by {user.username}",
+                    "description": "Allowed update",
+                    "thumbnail": "",
+                },
+            )
+            experience_response = self.client.post(
+                reverse("main:update_experience", args=[self.experience.id]),
+                {
+                    "title": f"Experience updated by {user.username}",
+                    "description": "Allowed update",
+                    "category": "full-time",
+                    "ended_at": "",
+                    "thumbnail": "",
+                },
+            )
+
+            with self.subTest(user=user.username):
+                self.assertRedirects(
+                    project_response, reverse("main:show_project")
+                )
+                self.assertRedirects(
+                    experience_response, reverse("main:show_experience")
+                )
+                self.project.refresh_from_db()
+                self.experience.refresh_from_db()
+                self.assertEqual(self.project.title, f"Updated by {user.username}")
+                self.assertEqual(
+                    self.experience.title,
+                    f"Experience updated by {user.username}",
+                )
 
     def test_regular_user_and_editor_cannot_delete(self):
-        delete_url = reverse("main:delete_project", args=[self.project.id])
-
         for user in (self.regular_user, self.editor):
             self.client.force_login(user)
-            self.assertEqual(self.client.post(delete_url).status_code, 403)
+            for delete_url in (
+                reverse("main:delete_project", args=[self.project.id]),
+                reverse("main:delete_experience", args=[self.experience.id]),
+            ):
+                with self.subTest(user=user.username, url=delete_url):
+                    self.assertEqual(self.client.post(delete_url).status_code, 403)
 
         self.assertTrue(Project.objects.filter(pk=self.project.id).exists())
+        self.assertTrue(Experience.objects.filter(pk=self.experience.id).exists())
 
     def test_superuser_can_create_and_delete(self):
         self.client.force_login(self.superuser)
 
-        create_response = self.client.post(
+        project_create_response = self.client.post(
             reverse("main:create_project"),
             {
                 "title": "Created by admin",
@@ -233,10 +415,60 @@ class AuthorizationTest(TestCase):
                 "thumbnail": "",
             },
         )
-        self.assertRedirects(create_response, reverse("main:show_project"))
+        experience_create_response = self.client.post(
+            reverse("main:create_experience"),
+            {
+                "title": "Created by admin",
+                "description": "Allowed operation",
+                "category": "full-time",
+                "ended_at": "",
+                "thumbnail": "",
+            },
+        )
+        self.assertRedirects(
+            project_create_response, reverse("main:show_project")
+        )
+        self.assertRedirects(
+            experience_create_response, reverse("main:show_experience")
+        )
 
-        delete_response = self.client.post(
+        project_delete_response = self.client.post(
             reverse("main:delete_project", args=[self.project.id])
         )
-        self.assertRedirects(delete_response, reverse("main:show_project"))
+        experience_delete_response = self.client.post(
+            reverse("main:delete_experience", args=[self.experience.id])
+        )
+        self.assertRedirects(
+            project_delete_response, reverse("main:show_project")
+        )
+        self.assertRedirects(
+            experience_delete_response, reverse("main:show_experience")
+        )
         self.assertFalse(Project.objects.filter(pk=self.project.id).exists())
+        self.assertFalse(Experience.objects.filter(pk=self.experience.id).exists())
+
+    def test_login_preserves_safe_next_url(self):
+        update_url = reverse("main:update_project", args=[self.project.id])
+        response = self.client.post(
+            reverse("main:login"),
+            {
+                "username": self.editor.username,
+                "password": "test-password",
+                "next": update_url,
+            },
+        )
+
+        self.assertRedirects(response, update_url, fetch_redirect_response=False)
+        self.assertEqual(self.client.get(update_url).status_code, 200)
+
+    def test_login_rejects_external_next_url(self):
+        response = self.client.post(
+            reverse("main:login"),
+            {
+                "username": self.regular_user.username,
+                "password": "test-password",
+                "next": "https://example.com/steal-session",
+            },
+        )
+
+        self.assertRedirects(response, reverse("main:show_main"))

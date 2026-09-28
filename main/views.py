@@ -2,7 +2,11 @@ from django.shortcuts import render
 
 from main.models import Experience, Achievement, Project
 from main.forms import ExperienceForm, ProjectForm
-from main.permissions import superuser_create_required, superuser_delete_required
+from main.permissions import (
+    editor_or_superuser_required,
+    superuser_create_required,
+    superuser_delete_required,
+)
 
 from django.contrib import messages
 from django.core import serializers
@@ -16,6 +20,8 @@ from django.shortcuts import redirect, render
 import datetime
 
 from django.contrib.auth.decorators import login_required  # Tambahkan baris ini
+from django.utils.http import url_has_allowed_host_and_scheme
+from django.views.decorators.http import require_POST
 
 
 @superuser_create_required
@@ -30,6 +36,8 @@ def create_project(request):
     context = {
         "name": "Burhan",
         "form": form,
+        "page_title": "Add New Project",
+        "submit_label": "Tambah Project",
     }
     return render(request, "projects_form.html", context)
 
@@ -46,6 +54,46 @@ def create_experience(request):
     context = {
         "name": "Muhammad Rifky Padjri",
         "form": form,
+        "page_title": "Add New Experience",
+        "submit_label": "Tambah Experience",
+    }
+    return render(request, "experience_form.html", context)
+
+
+@editor_or_superuser_required
+def update_project(request, project_id):
+    project = get_object_or_404(Project, pk=project_id)
+    form = ProjectForm(request.POST or None, instance=project)
+
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Project berhasil diperbarui!")
+        return redirect("main:show_project")
+
+    context = {
+        "name": "Muhammad Rifky Padjri",
+        "form": form,
+        "page_title": "Edit Project",
+        "submit_label": "Simpan Perubahan",
+    }
+    return render(request, "projects_form.html", context)
+
+
+@editor_or_superuser_required
+def update_experience(request, experience_id):
+    experience = get_object_or_404(Experience, pk=experience_id)
+    form = ExperienceForm(request.POST or None, instance=experience)
+
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Pengalaman berhasil diperbarui!")
+        return redirect("main:show_experience")
+
+    context = {
+        "name": "Muhammad Rifky Padjri",
+        "form": form,
+        "page_title": "Edit Experience",
+        "submit_label": "Simpan Perubahan",
     }
     return render(request, "experience_form.html", context)
 
@@ -140,25 +188,22 @@ def show_projects(request):
     return render(request, "project.html", context)
 
 @superuser_delete_required
+@require_POST
 def delete_project(request, project_id):
     project = get_object_or_404(Project, pk=project_id)
 
-    if request.method == "POST":
-        project.delete()
-        messages.success(request, "Project berhasil dihapus!")
-        return redirect("main:show_project")
-
+    project.delete()
+    messages.success(request, "Project berhasil dihapus!")
     return redirect("main:show_project")
 
 
 @superuser_delete_required
+@require_POST
 def delete_experience(request, experience_id):
     experience = get_object_or_404(Experience, pk=experience_id)
 
-    if request.method == "POST":
-        experience.delete()
-        messages.success(request, "Pengalaman berhasil dihapus!")
-
+    experience.delete()
+    messages.success(request, "Pengalaman berhasil dihapus!")
     return redirect("main:show_experience")
 
 
@@ -182,13 +227,22 @@ def login_user(request):
     if request.method == "POST" and form.is_valid():
         user = form.get_user()
         login(request, user)
-        response = redirect("main:show_main")
+        next_url = request.POST.get("next", "")
+        if next_url and url_has_allowed_host_and_scheme(
+            url=next_url,
+            allowed_hosts={request.get_host()},
+            require_https=request.is_secure(),
+        ):
+            response = redirect(next_url)
+        else:
+            response = redirect("main:show_main")
         response.set_cookie('last_login', datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         return response
 
     context = {
         "name": "Muhammad Rifky Padjri",
         "form": form,
+        "next": request.POST.get("next", request.GET.get("next", "")),
     }
     return render(request, "login.html", context)
 
