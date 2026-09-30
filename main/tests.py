@@ -122,7 +122,7 @@ class MainTest(TestCase):
             },
         )
 
-    def test_projects_json_excludes_star_users_and_authentication_data(self):
+    def test_projects_json_includes_star_status_without_authentication_data(self):
         user = get_user_model().objects.create_user(
             username="json-user",
             password="secret-test-password",
@@ -139,12 +139,16 @@ class MainTest(TestCase):
         self.assertEqual(len(payload), 1)
         self.assertEqual(
             set(payload[0]["fields"]),
-            {"title", "description", "thumbnail"},
+            {
+                "title", "description", "thumbnail", "star_count",
+                "is_starred", "starred_by_names",
+            },
         )
+        self.assertEqual(payload[0]["fields"]["star_count"], 1)
+        self.assertTrue(payload[0]["fields"]["is_starred"])
+        self.assertEqual(payload[0]["fields"]["starred_by_names"], "json-user")
         response_text = response.content.decode("utf-8")
         for sensitive_value in (
-            "starred_by",
-            "json-user",
             "json-user@example.com",
             "secret-test-password",
             "session",
@@ -178,9 +182,9 @@ class MainTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "project.html")
-        self.assertContains(response, self.project.title)
-        self.assertContains(response, self.project.description)
-        self.assertContains(response, self.project.thumbnail)
+        self.assertContains(response, reverse("main:get_projects_json"))
+        self.assertContains(response, 'id="grid"')
+        self.assertContains(response, "fetchProjects(searchInput.value.trim())")
         self.assertContains(response, f'href="{reverse("main:show_main")}"')
         self.assertNotContains(response, "Belum ada project yang ditambahkan.")
 
@@ -190,7 +194,7 @@ class MainTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "project.html")
-        self.assertContains(response, "Belum ada proyek yang ditambahkan.")
+        self.assertContains(response, "Belum ada proyek yang ditambahkan atau ditemukan.")
         self.assertNotContains(response, "FoundrOS")
 
     def test_achievement_page(self):
@@ -347,21 +351,11 @@ class AuthorizationTest(TestCase):
                     can_create,
                 ),
                 (
-                    project_response,
-                    reverse("main:update_project", args=[self.project.id]),
-                    can_update,
-                ),
-                (
                     experience_response,
                     reverse(
                         "main:update_experience", args=[self.experience.id]
                     ),
                     can_update,
-                ),
-                (
-                    project_response,
-                    reverse("main:delete_project", args=[self.project.id]),
-                    can_delete,
                 ),
                 (
                     experience_response,
@@ -378,6 +372,15 @@ class AuthorizationTest(TestCase):
                         self.assertContains(response, action_url)
                     else:
                         self.assertNotContains(response, action_url)
+
+            self.assertContains(
+                project_response,
+                f'const CAN_UPDATE_CONTENT = "{str(can_update).lower()}"',
+            )
+            self.assertContains(
+                project_response,
+                f'const IS_SUPERUSER = "{str(can_delete).lower()}"',
+            )
 
             with self.subTest(role=role, container="experience-actions"):
                 if can_update or can_delete:
@@ -592,32 +595,28 @@ class ProjectStarTest(TestCase):
         self.project.starred_by.add(self.user)
 
         response = self.client.get(reverse("main:show_project"))
+        data = self.client.get(reverse("main:get_projects_json")).json()
 
-        self.assertContains(
-            response,
-            f'href="{reverse("main:login")}?next=',
-            html=False,
-        )
+        self.assertContains(response, 'const IS_AUTHENTICATED = "false"')
         self.assertContains(response, "Login untuk Star")
-        self.assertContains(response, '<span class="star-count">1</span>')
+        self.assertEqual(data[0]["fields"]["star_count"], 1)
+        self.assertFalse(data[0]["fields"]["is_starred"])
         self.assertNotContains(response, f'action="{self.toggle_url}"')
 
     def test_authenticated_user_sees_post_form_csrf_and_star_status(self):
         self.client.force_login(self.user)
 
         unstarred_response = self.client.get(reverse("main:show_project"))
-        self.assertContains(unstarred_response, f'action="{self.toggle_url}"')
+        unstarred_data = self.client.get(reverse("main:get_projects_json")).json()
+        self.assertContains(unstarred_response, 'const IS_AUTHENTICATED = "true"')
         self.assertContains(unstarred_response, 'name="csrfmiddlewaretoken"')
-        self.assertContains(unstarred_response, 'aria-pressed="false"')
-        self.assertContains(
-            unstarred_response, '<span class="star-count">0</span>'
-        )
+        self.assertFalse(unstarred_data[0]["fields"]["is_starred"])
+        self.assertEqual(unstarred_data[0]["fields"]["star_count"], 0)
 
         self.project.starred_by.add(self.user)
-        starred_response = self.client.get(reverse("main:show_project"))
-        self.assertContains(starred_response, 'aria-pressed="true"')
-        self.assertContains(starred_response, "Unstar")
-        self.assertContains(starred_response, '<span class="star-count">1</span>')
+        starred_data = self.client.get(reverse("main:get_projects_json")).json()
+        self.assertTrue(starred_data[0]["fields"]["is_starred"])
+        self.assertEqual(starred_data[0]["fields"]["star_count"], 1)
 
     def test_regular_editor_and_superuser_all_receive_star_form(self):
         editor = get_user_model().objects.create_user(username="star-editor")
@@ -631,8 +630,53 @@ class ProjectStarTest(TestCase):
             response = self.client.get(reverse("main:show_project"))
 
             with self.subTest(user=user.username):
-                self.assertContains(response, f'action="{self.toggle_url}"')
+                self.assertContains(response, 'const IS_AUTHENTICATED = "true"')
                 self.assertContains(response, 'name="csrfmiddlewaretoken"')
+
+
+class ProjectAjaxCreateTest(TestCase):
+    def setUp(self):
+        self.url = reverse("main:create_project_ajax")
+        self.admin = get_user_model().objects.create_superuser(
+            username="ajax-admin", password="test-password"
+        )
+
+    def test_only_superuser_can_create(self):
+        payload = {"title": "New Project", "description": "Description"}
+        self.assertEqual(self.client.get(self.url).status_code, 405)
+        self.assertEqual(self.client.post(self.url, payload).status_code, 403)
+        user = get_user_model().objects.create_user(username="ajax-user")
+        self.client.force_login(user)
+        self.assertEqual(self.client.post(self.url, payload).status_code, 403)
+        self.assertFalse(Project.objects.exists())
+
+    def test_create_validates_and_strips_html(self):
+        self.client.force_login(self.admin)
+        invalid = self.client.post(
+            self.url,
+            {"title": '<img src="x">', "description": "Description"},
+        )
+        self.assertEqual(invalid.status_code, 400)
+        self.assertIn("title", invalid.json()["errors"])
+        self.assertFalse(Project.objects.exists())
+
+        valid = self.client.post(
+            self.url,
+            {"title": "Hello <b>world</b>", "description": "A <i>project</i>"},
+        )
+        self.assertEqual(valid.status_code, 201)
+        project = Project.objects.get(pk=valid.json()["pk"])
+        self.assertEqual(project.title, "Hello world")
+        self.assertEqual(project.description, "A project")
+
+    def test_csrf_is_required(self):
+        csrf_client = Client(enforce_csrf_checks=True)
+        csrf_client.force_login(self.admin)
+        response = csrf_client.post(
+            self.url, {"title": "New Project", "description": "Description"}
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(Project.objects.exists())
 
 
 class SessionSecurityTest(TestCase):
