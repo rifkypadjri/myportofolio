@@ -119,6 +119,10 @@ class MainTest(TestCase):
                 "thumbnail",
                 "started_at",
                 "ended_at",
+                "category_display",
+                "is_ongoing",
+                "star_count",
+                "is_starred",
             },
         )
 
@@ -218,6 +222,74 @@ class MainTest(TestCase):
         self.assertTemplateUsed(response, "achievement.html")
         self.assertContains(response, "Belum ada prestasi yang ditambahkan.")
         self.assertNotContains(response, "Datavidia Finalist")
+
+
+class ExperienceJsonTest(TestCase):
+    def setUp(self):
+        self.experience = Experience.objects.create(
+            title="Research Assistant", description="Research work", category="research"
+        )
+        self.user = get_user_model().objects.create_user(
+            username="experience-reader", email="private@example.com"
+        )
+        self.other_user = get_user_model().objects.create_user(username="other-reader")
+        self.experience.starred_by.add(self.other_user)
+        self.url = reverse("main:get_experiences_json")
+
+    def get_fields(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/json")
+        item = response.json()[0]
+        self.assertEqual(item["pk"], str(self.experience.pk))
+        self.assertEqual(item["model"], "main.experience")
+        self.assertNotIn("private@example.com", response.content.decode())
+        self.assertNotIn("starred_by", item["fields"])
+        return item["fields"]
+
+    def test_anonymous_user_sees_total_without_personal_star(self):
+        fields = self.get_fields()
+        self.assertEqual(fields["star_count"], 1)
+        self.assertFalse(fields["is_starred"])
+        self.assertEqual(fields["category_display"], "Research")
+        self.assertTrue(fields["is_ongoing"])
+        self.assertIsNone(fields["ended_at"])
+        self.assertIsNone(fields["thumbnail"])
+        self.assertIsInstance(fields["started_at"], str)
+
+    def test_authenticated_user_without_star(self):
+        self.client.force_login(self.user)
+        fields = self.get_fields()
+        self.assertEqual(fields["star_count"], 1)
+        self.assertFalse(fields["is_starred"])
+
+    def test_current_user_star_is_specific_to_experience(self):
+        self.client.force_login(self.user)
+        self.experience.starred_by.add(self.user)
+        self.experience.starred_by.add(self.user)
+        fields = self.get_fields()
+        self.assertEqual(fields["star_count"], 2)
+        self.assertTrue(fields["is_starred"])
+        self.experience.starred_by.remove(self.user)
+        self.assertFalse(self.get_fields()["is_starred"])
+
+    def test_completed_experience_and_existing_title_filter(self):
+        self.experience.ended_at = timezone.now()
+        self.experience.save()
+        fields = self.get_fields()
+        self.assertFalse(fields["is_ongoing"])
+        self.assertIsInstance(fields["ended_at"], str)
+        self.assertEqual(len(self.client.get(self.url, {"title": " research "}).json()), 1)
+        self.assertEqual(self.client.get(self.url, {"title": "missing"}).json(), [])
+
+    def test_empty_list(self):
+        Experience.objects.all().delete()
+        self.assertEqual(self.client.get(self.url).json(), [])
+
+    def test_prefetch_avoids_per_item_star_queries(self):
+        Experience.objects.create(title="Intern", description="Internship")
+        with self.assertNumQueries(2):
+            self.client.get(self.url)
 
 
 class AuthorizationTest(TestCase):

@@ -10,8 +10,6 @@ from main.permissions import (
 )
 
 from django.contrib import messages
-from django.core import serializers
-from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
 from django.contrib import messages
@@ -116,14 +114,10 @@ def show_main(request):
 
 
 def show_experience(request):
-    json_response = get_experiences_json(request)
-
-    experiences = serializers.deserialize(
-        "json",
-        json_response.content.decode("utf-8"),
-    )
-    experiences = [experience.object for experience in experiences]
     title_query = request.GET.get("title", "").strip()
+    experiences = Experience.objects.all()
+    if title_query:
+        experiences = experiences.filter(title__icontains=title_query)
 
     context = {
         "name": "Muhammad Rifky Padjri",
@@ -183,24 +177,34 @@ def get_projects_json(request):
 
 def get_experiences_json(request):
     title_query = request.GET.get("title", "").strip()
-    experiences = Experience.objects.all()
+    experiences = Experience.objects.prefetch_related("starred_by").all()
 
     if title_query:
         experiences = experiences.filter(title__icontains=title_query)
 
-    experiences_json = serializers.serialize(
-        "json",
-        experiences,
-        fields=(
-            "title",
-            "description",
-            "category",
-            "thumbnail",
-            "started_at",
-            "ended_at",
-        ),
-    )
-    return HttpResponse(experiences_json, content_type="application/json")
+    data = []
+    for experience in experiences:
+        starred_users = experience.starred_by.all()
+        data.append({
+            "model": "main.experience",
+            "pk": str(experience.id),
+            "fields": {
+                "title": experience.title,
+                "description": experience.description,
+                "category": experience.category,
+                "category_display": experience.get_category_display(),
+                "thumbnail": experience.thumbnail,
+                "started_at": experience.started_at,
+                "ended_at": experience.ended_at,
+                "is_ongoing": experience.is_ongoing,
+                "star_count": starred_users.count(),
+                "is_starred": (
+                    request.user in starred_users
+                    if request.user.is_authenticated else False
+                ),
+            },
+        })
+    return JsonResponse(data, safe=False)
 
 
 def show_projects(request):
