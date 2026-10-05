@@ -77,13 +77,14 @@ class MainTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "experience.html")
-        self.assertContains(response, self.experience.title)
-        self.assertContains(response, self.experience.description)
-        self.assertContains(response, "Part-Time")
-        self.assertContains(response, "Sedang berlangsung")
-        self.assertContains(response, self.experience.thumbnail)
+        self.assertContains(response, reverse("main:get_experiences_json"))
+        self.assertContains(response, "Memuat pengalaman...")
+        self.assertContains(response, "experience.js")
+        self.assertNotIn("experience_list", response.context)
+        self.assertNotContains(response, self.experience.title)
+        self.assertNotContains(response, self.experience.description)
+        self.assertNotContains(response, self.experience.thumbnail)
         self.assertContains(response, f'href="{reverse("main:show_main")}"')
-        self.assertNotContains(response, "Belum ada pengalaman yang ditambahkan.")
 
     def test_empty_experience_page(self):
         Experience.objects.all().delete()
@@ -97,11 +98,10 @@ class MainTest(TestCase):
     def test_completed_experience(self):
         self.experience.ended_at = timezone.now()
         self.experience.save()
-        response = self.client.get(reverse("main:show_experience"))
+        response = self.client.get(reverse("main:get_experiences_json"))
 
         self.assertFalse(self.experience.is_ongoing)
-        self.assertContains(response, "Selesai")
-        self.assertNotContains(response, "Sedang berlangsung")
+        self.assertFalse(response.json()[0]["fields"]["is_ongoing"])
 
     def test_get_experiences_json(self):
         response = self.client.get(reverse("main:get_experiences_json"))
@@ -422,20 +422,6 @@ class AuthorizationTest(TestCase):
                     reverse("main:create_experience"),
                     can_create,
                 ),
-                (
-                    experience_response,
-                    reverse(
-                        "main:update_experience", args=[self.experience.id]
-                    ),
-                    can_update,
-                ),
-                (
-                    experience_response,
-                    reverse(
-                        "main:delete_experience", args=[self.experience.id]
-                    ),
-                    can_delete,
-                ),
             )
 
             for response, action_url, should_be_visible in assertions:
@@ -454,13 +440,15 @@ class AuthorizationTest(TestCase):
                 f'const IS_SUPERUSER = "{str(can_delete).lower()}"',
             )
 
-            with self.subTest(role=role, container="experience-actions"):
-                if can_update or can_delete:
-                    self.assertContains(experience_response, "experience-actions")
-                else:
-                    self.assertNotContains(
-                        experience_response, "experience-actions"
-                    )
+            self.assertContains(
+                experience_response,
+                f'data-can-edit="{str(can_update).lower()}"',
+            )
+            self.assertContains(
+                experience_response,
+                f'data-can-delete="{str(can_delete).lower()}"',
+            )
+            self.assertNotContains(experience_response, self.experience.title)
 
     def test_regular_user_cannot_update(self):
         self.client.force_login(self.regular_user)
