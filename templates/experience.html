@@ -17,7 +17,12 @@
                class="project-search__input" placeholder="Cari pengalaman"
                aria-label="Cari berdasarkan judul atau deskripsi pengalaman" />
         <button type="submit" class="button">Cari</button>
+        <button type="button" id="experience-clear-search" class="button button-secondary"
+                aria-label="Hapus pencarian dan tampilkan semua pengalaman" disabled>Hapus</button>
       </form>
+
+      <p id="experience-result-count" class="experience-result-count"
+         role="status" aria-live="polite" aria-atomic="true" hidden></p>
 
       <div id="experience-loading" class="empty-state" role="status">Memuat pengalaman...</div>
       <div id="experience-empty" class="empty-state hide">Belum ada pengalaman yang ditambahkan.</div>

@@ -10,6 +10,8 @@
   const placeholderId = '00000000-0000-0000-0000-000000000000';
   const searchForm = document.getElementById('experience-search-form');
   const searchInput = document.getElementById('experience-search-input');
+  const clearSearchButton = document.getElementById('experience-clear-search');
+  const resultCount = document.getElementById('experience-result-count');
   const SEARCH_DEBOUNCE_DELAY = 300;
   let requestVersion = 0;
   let requestController;
@@ -55,7 +57,14 @@
   }
 
   function renderLoadingState() {
+    if (resultCount) resultCount.hidden = true;
     showState('loading');
+  }
+
+  function renderResultCount(count, query) {
+    if (!resultCount) return;
+    resultCount.textContent = `${count} pengalaman${query ? ' ditemukan' : ''}.`;
+    resultCount.hidden = false;
   }
 
   function renderEmptyState(query) {
@@ -63,10 +72,12 @@
       ? 'Tidak ada pengalaman yang cocok dengan pencarian.'
       : 'Belum ada pengalaman yang ditambahkan.';
     listContainer.replaceChildren();
+    renderResultCount(0, query);
     showState('empty');
   }
 
   function renderErrorState() {
+    if (resultCount) resultCount.hidden = true;
     listContainer.replaceChildren();
     showState('error');
     notifyExperience('Gagal memuat pengalaman', 'Data pengalaman tidak dapat dimuat. Silakan coba lagi.', 'error');
@@ -218,6 +229,7 @@
     const fragment = document.createDocumentFragment();
     items.forEach(item => fragment.append(buildExperience(item)));
     listContainer.replaceChildren(fragment);
+    renderResultCount(items.length, query);
     showState('loaded');
   }
 
@@ -262,7 +274,13 @@
   }
 
   function initializeExperienceSearch() {
+    function updateClearSearchButton() {
+      if (clearSearchButton) clearSearchButton.disabled = searchInput.value.length === 0;
+    }
+
+    updateClearSearchButton();
     searchInput.addEventListener('input', () => {
+      updateClearSearchButton();
       // Invalidate immediately, including while the next query is debouncing.
       invalidateRequest();
       renderLoadingState();
@@ -272,6 +290,14 @@
       event.preventDefault();
       refreshExperienceList();
     });
+    if (clearSearchButton) {
+      clearSearchButton.addEventListener('click', () => {
+        searchInput.value = '';
+        updateClearSearchButton();
+        searchInput.focus();
+        refreshExperienceList();
+      });
+    }
   }
 
   async function postExperienceForm(form) {
