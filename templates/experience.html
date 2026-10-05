@@ -12,6 +12,13 @@
         Roles, internships, and hands-on work along my journey.
       </p>
 
+      <form id="experience-search-form" class="project-search" role="search">
+        <input type="search" id="experience-search-input" name="q"
+               class="project-search__input" placeholder="Cari pengalaman"
+               aria-label="Cari berdasarkan judul atau deskripsi pengalaman" />
+        <button type="submit" class="button">Cari</button>
+      </form>
+
       <div id="experience-loading" class="empty-state" role="status">Memuat pengalaman...</div>
       <div id="experience-empty" class="empty-state hide">Belum ada pengalaman yang ditambahkan.</div>
       <div id="experience-error" class="empty-state hide" role="alert">Gagal memuat pengalaman. Silakan coba lagi.</div>

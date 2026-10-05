@@ -19,6 +19,7 @@ async function render(fields = {}, pk = id) {
   virtualConsole.on('jsdomError', error => errors.push(error));
   virtualConsole.on('error', (...args) => errors.push(args));
   const dom = new JSDOM(`<!doctype html>
+    <form id="experience-search-form"><input id="experience-search-input" type="search"></form>
     <div id="experience-loading"></div>
     <div id="experience-empty" class="hide"></div>
     <div id="experience-error" class="hide"></div>
@@ -107,7 +108,7 @@ test('valid display text and HTTP URLs retain punctuation, accents and query str
   assert.equal(result.document.querySelector('img').getAttribute('src'), thumbnail);
   assert.equal(result.document.querySelector('.star-count').textContent, '3');
   assert(result.document.querySelector('.experience-star.is-starred'));
-  assert.equal(result.document.querySelector('form').getAttribute('action'), `/experiences/${id}/delete/`);
+  assert.equal(result.document.querySelector('.project-delete-modal form').getAttribute('action'), `/experiences/${id}/delete/`);
   result.dom.window.close();
 });
 
@@ -126,7 +127,7 @@ test('invalid IDs show the error state without creating links or modal IDs', asy
     const result = await render({}, invalidId);
     assert.equal(result.errors.length, 1);
     assert.equal(result.document.querySelector('#experience-error').classList.contains('hide'), false);
-    assert.equal(result.document.querySelectorAll('article, a, form').length, 0);
+    assert.equal(result.document.querySelectorAll('article, a, .project-delete-modal form').length, 0);
     result.dom.window.close();
   }
 });

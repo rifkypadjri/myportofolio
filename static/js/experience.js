@@ -8,6 +8,17 @@
   };
   const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   const placeholderId = '00000000-0000-0000-0000-000000000000';
+  const searchForm = document.getElementById('experience-search-form');
+  const searchInput = document.getElementById('experience-search-input');
+  const SEARCH_DEBOUNCE_DELAY = 300;
+  let searchTimer;
+  let requestVersion = 0;
+  let requestController;
+
+  function invalidateRequest() {
+    requestVersion += 1;
+    if (requestController) requestController.abort();
+  }
 
   // Do not HTML-escape these values: DOM text/property setters preserve literal
   // characters without parsing markup. Never pass API values to an HTML sink.
@@ -157,14 +168,30 @@
     return article;
   }
 
-  async function loadExperiences() {
+  async function loadExperiences(query = '') {
+    invalidateRequest();
+    const version = requestVersion;
+    requestController = new AbortController();
     showState('loading');
     try {
-      const response = await fetch(list.dataset.endpoint, { headers: { Accept: 'application/json' } });
+      let endpoint = list.dataset.endpoint;
+      if (query) {
+        const url = new URL(endpoint, window.location.href);
+        url.searchParams.set('q', query);
+        endpoint = url.href;
+      }
+      const response = await fetch(endpoint, {
+        headers: { Accept: 'application/json' }, signal: requestController.signal,
+      });
+      if (version !== requestVersion) return;
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const items = await response.json();
+      if (version !== requestVersion) return;
       if (!Array.isArray(items)) throw new Error('Invalid experience response');
       if (items.length === 0) {
+        states.empty.textContent = query
+          ? 'Tidak ada pengalaman yang cocok dengan pencarian.'
+          : 'Belum ada pengalaman yang ditambahkan.';
         list.replaceChildren();
         showState('empty');
         return;
@@ -174,11 +201,26 @@
       list.replaceChildren(fragment);
       showState('loaded');
     } catch (error) {
+      if (version !== requestVersion || error.name === 'AbortError') return;
       console.error('Error loading experiences:', error);
       list.replaceChildren();
       showState('error');
     }
   }
 
-  loadExperiences();
+  searchInput.addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    // Invalidate immediately, including while the next query is debouncing.
+    invalidateRequest();
+    showState('loading');
+    searchTimer = setTimeout(() => loadExperiences(searchInput.value.trim()), SEARCH_DEBOUNCE_DELAY);
+  });
+
+  searchForm.addEventListener('submit', event => {
+    event.preventDefault();
+    clearTimeout(searchTimer);
+    loadExperiences(searchInput.value.trim());
+  });
+
+  loadExperiences(searchInput.value.trim());
 })();

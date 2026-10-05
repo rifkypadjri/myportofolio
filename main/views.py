@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.http import JsonResponse
+from django.db.models import Q
 
 from main.models import Experience, Achievement, Project
 from main.forms import ExperienceForm, ProjectForm
@@ -169,11 +170,19 @@ def get_projects_json(request):
 
 
 def get_experiences_json(request):
-    title_query = request.GET.get("title", "").strip()
     experiences = Experience.objects.prefetch_related("starred_by").all()
 
-    if title_query:
-        experiences = experiences.filter(title__icontains=title_query)
+    if "q" in request.GET:
+        query = request.GET.get("q", "").strip()
+        if query:
+            experiences = experiences.filter(
+                Q(title__icontains=query) | Q(description__icontains=query)
+            )
+    else:
+        # Preserve the previously supported title-only API filter.
+        title_query = request.GET.get("title", "").strip()
+        if title_query:
+            experiences = experiences.filter(title__icontains=title_query)
 
     data = []
     for experience in experiences:

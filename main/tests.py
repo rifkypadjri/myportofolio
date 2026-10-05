@@ -286,6 +286,33 @@ class ExperienceJsonTest(TestCase):
         Experience.objects.all().delete()
         self.assertEqual(self.client.get(self.url).json(), [])
 
+    def test_anonymous_search_matches_title_or_description(self):
+        other = Experience.objects.create(
+            title="Intern", description="Operations work"
+        )
+        Experience.objects.create(title="Volunteer", description="Community event")
+        title_matches = self.client.get(self.url, {"q": " RESEARCH "}).json()
+        self.assertEqual([item["pk"] for item in title_matches], [str(self.experience.pk)])
+        description_matches = self.client.get(self.url, {"q": "operations"}).json()
+        self.assertEqual([item["pk"] for item in description_matches], [str(other.pk)])
+        both_matches = self.client.get(self.url, {"q": "work"}).json()
+        self.assertEqual({item["pk"] for item in both_matches}, {str(other.pk), str(self.experience.pk)})
+        self.assertEqual(len(self.client.get(self.url, {"q": "research"}).json()), 1)
+        self.assertEqual(self.client.get(self.url, {"q": "missing"}).json(), [])
+
+    def test_empty_search_restores_all_experiences(self):
+        Experience.objects.create(title="Intern", description="Operations")
+        for query in ("", "   "):
+            with self.subTest(query=query):
+                self.assertEqual(len(self.client.get(self.url, {"q": query}).json()), 2)
+
+    def test_search_preserves_personal_star_state(self):
+        self.client.force_login(self.user)
+        self.experience.starred_by.add(self.user)
+        fields = self.client.get(self.url, {"q": "Research"}).json()[0]["fields"]
+        self.assertEqual(fields["star_count"], 2)
+        self.assertTrue(fields["is_starred"])
+
     def test_prefetch_avoids_per_item_star_queries(self):
         Experience.objects.create(title="Intern", description="Internship")
         with self.assertNumQueries(2):
