@@ -5,6 +5,7 @@ from django.db.models import Q
 from main.models import Experience, Achievement, Project
 from main.forms import ExperienceForm, ProjectForm
 from main.permissions import (
+    can_create_content,
     editor_or_superuser_required,
     superuser_create_required,
     superuser_delete_required,
@@ -217,6 +218,33 @@ def show_projects(request):
         "title_query": title_query,
     }
     return render(request, "project.html", context)
+
+
+@require_POST
+def create_experience_ajax(request):
+    if not can_create_content(request.user):
+        return JsonResponse(
+            {
+                "success": False,
+                "message": "Hanya pemilik portofolio yang dapat menambahkan pengalaman.",
+            },
+            status=403,
+        )
+
+    form = ExperienceForm(request.POST)
+    if form.is_valid():
+        experience = form.save()
+        return JsonResponse(
+            {
+                "success": True,
+                "message": "Pengalaman berhasil ditambahkan.",
+                "pk": str(experience.pk),
+            },
+            status=201,
+        )
+    return JsonResponse(
+        {"success": False, "errors": form.errors.get_json_data()}, status=400
+    )
 
 
 @require_POST

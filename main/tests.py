@@ -766,6 +766,96 @@ class ProjectAjaxCreateTest(TestCase):
         self.assertFalse(Project.objects.exists())
 
 
+class ExperienceAjaxCreateTest(TestCase):
+    def setUp(self):
+        self.url = reverse("main:create_experience_ajax")
+        self.admin = get_user_model().objects.create_superuser(username="experience-admin")
+        self.payload = {
+            "title": "Research Assistant",
+            "description": "Research & development",
+            "category": "research",
+            "thumbnail": "",
+            "ended_at": "",
+        }
+
+    def test_authorized_valid_request_creates_experience(self):
+        self.client.force_login(self.admin)
+        response = self.client.post(self.url, self.payload)
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response["Content-Type"], "application/json")
+        result = response.json()
+        self.assertTrue(result["success"])
+        self.assertTrue(result["message"])
+        self.assertEqual(Experience.objects.count(), 1)
+        experience = Experience.objects.get(pk=result["pk"])
+        self.assertEqual(experience.title, self.payload["title"])
+        self.assertEqual(experience.description, self.payload["description"])
+        self.assertEqual(experience.category, "research")
+        self.assertTrue(experience.is_ongoing)
+        self.assertEqual(experience.starred_by.count(), 0)
+        items = self.client.get(reverse("main:get_experiences_json")).json()
+        self.assertEqual(items[0]["pk"], result["pk"])
+
+    def test_invalid_request_returns_field_errors_without_saving(self):
+        self.client.force_login(self.admin)
+        invalid_payloads = (
+            ({}, {"title", "description", "category"}),
+            ({**self.payload, "title": " "}, {"title"}),
+            ({**self.payload, "title": "x" * 256}, {"title"}),
+            ({**self.payload, "category": "invalid"}, {"category"}),
+            ({**self.payload, "thumbnail": "javascript:alert(1)"}, {"thumbnail"}),
+            ({**self.payload, "ended_at": "not-a-date"}, {"ended_at"}),
+        )
+        for payload, expected_fields in invalid_payloads:
+            with self.subTest(fields=expected_fields):
+                response = self.client.post(self.url, payload)
+                self.assertEqual(response.status_code, 400)
+                result = response.json()
+                self.assertFalse(result["success"])
+                self.assertTrue(expected_fields.issubset(result["errors"]))
+                for field in expected_fields:
+                    self.assertTrue(result["errors"][field][0]["message"])
+                    self.assertTrue(result["errors"][field][0]["code"])
+                self.assertFalse(Experience.objects.exists())
+
+    def test_anonymous_and_unauthorized_roles_cannot_create(self):
+        regular = get_user_model().objects.create_user(username="experience-regular")
+        editor = get_user_model().objects.create_user(username="experience-editor")
+        editor.groups.add(Group.objects.create(name="Editor"))
+        staff = get_user_model().objects.create_user(username="experience-staff", is_staff=True)
+        for user in (None, regular, editor, staff):
+            with self.subTest(user=user.username if user else "anonymous"):
+                self.client.logout()
+                if user:
+                    self.client.force_login(user)
+                response = self.client.post(self.url, {**self.payload, "is_superuser": "true"})
+                self.assertEqual(response.status_code, 403)
+                self.assertFalse(response.json()["success"])
+                self.assertTrue(response.json()["message"])
+                self.assertNotIn("Location", response)
+                self.assertFalse(Experience.objects.exists())
+
+    def test_endpoint_is_post_only(self):
+        self.client.force_login(self.admin)
+        for method in ("get", "put", "patch", "delete"):
+            with self.subTest(method=method):
+                response = getattr(self.client, method)(self.url)
+                self.assertEqual(response.status_code, 405)
+                self.assertEqual(response["Allow"], "POST")
+                self.assertFalse(Experience.objects.exists())
+
+    def test_csrf_is_required_and_valid_token_allows_creation(self):
+        csrf_client = Client(enforce_csrf_checks=True)
+        csrf_client.force_login(self.admin)
+        self.assertEqual(csrf_client.post(self.url, self.payload).status_code, 403)
+        self.assertFalse(Experience.objects.exists())
+        csrf_client.get(reverse("main:show_experience"))
+        token = csrf_client.cookies["csrftoken"].value
+        response = csrf_client.post(self.url, self.payload, HTTP_X_CSRFTOKEN=token)
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(response.json()["success"])
+
+
 class SessionSecurityTest(TestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user(

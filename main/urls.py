@@ -7,6 +7,7 @@ urlpatterns = [
     path("", show_main, name="show_main"),
     path("experience/", show_experience, name="show_experience"),
     path("experience/add/", create_experience, name="create_experience"),
+    path("experiences/add-ajax/", create_experience_ajax, name="create_experience_ajax"),
     path(
         "experiences/<uuid:experience_id>/edit/",
         update_experience,
