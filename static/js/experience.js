@@ -15,6 +15,11 @@
   let requestVersion = 0;
   let requestController;
 
+  function notifyExperience(title, message, type) {
+    // base.html loads Tutorial 05's shared toast; no separate toast UI is needed.
+    if (typeof window.showToast === 'function') window.showToast(title, message, type);
+  }
+
   function invalidateRequest() {
     requestVersion += 1;
     if (requestController) requestController.abort();
@@ -205,6 +210,7 @@
       console.error('Error loading experiences:', error);
       list.replaceChildren();
       showState('error');
+      notifyExperience('Gagal memuat pengalaman', 'Data pengalaman tidak dapat dimuat. Silakan coba lagi.', 'error');
     }
   }
 
@@ -296,16 +302,24 @@
           addModal.hidePopover();
           clearTimeout(searchTimer);
           loadExperiences(searchInput.value.trim());
+          notifyExperience('Berhasil', 'Pengalaman berhasil ditambahkan.', 'success');
         } else if (response.status === 400) {
           showValidationErrors(result.errors);
+          notifyExperience('Data belum valid', 'Periksa dan perbaiki kolom yang ditandai pada form.', 'error');
         } else if (response.status === 403) {
-          showFormError(result.message || 'Anda tidak memiliki izin atau sesi telah kedaluwarsa. Silakan muat ulang halaman.');
+          const message = result.message || 'Anda tidak memiliki izin atau sesi telah kedaluwarsa. Silakan muat ulang halaman.';
+          showFormError(message);
+          notifyExperience('Akses ditolak', message, 'error');
         } else {
-          showFormError('Server gagal menyimpan pengalaman. Silakan coba lagi.');
+          const message = 'Server gagal menyimpan pengalaman. Silakan coba lagi.';
+          showFormError(message);
+          notifyExperience('Gagal menambahkan pengalaman', message, 'error');
         }
       } catch (error) {
         console.error('Error adding experience:', error);
-        showFormError('Tidak dapat terhubung ke server. Periksa koneksi dan coba lagi.');
+        const message = 'Tidak dapat terhubung ke server. Periksa koneksi dan coba lagi.';
+        showFormError(message);
+        notifyExperience('Gangguan koneksi', message, 'error');
       } finally {
         isSubmitting = false;
         submitButton.disabled = false;

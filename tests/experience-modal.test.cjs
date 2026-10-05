@@ -4,6 +4,7 @@ const path = require('node:path');
 const { test } = require('node:test');
 const { JSDOM, VirtualConsole } = require(process.argv[2] || 'jsdom');
 const source = fs.readFileSync(path.join(__dirname, '../static/js/experience.js'), 'utf8');
+const toastSource = fs.readFileSync(path.join(__dirname, '../static/js/toast.js'), 'utf8');
 const flush = () => new Promise(resolve => setImmediate(resolve));
 
 async function setup(t, privileged = true) {
@@ -28,13 +29,23 @@ async function setup(t, privileged = true) {
         <select name="category"><option value="research">Research</option></select>
         <input name="thumbnail"><input name="ended_at">
         <button type="submit">Tambah Pengalaman</button>
-      </form></div>` : ''}`, {
+      </form></div>` : ''}
+    <div id="toast-component" class="toast-hidden">
+      <h3 id="toast-title"></h3><p id="toast-message"></p>
+    </div>`, {
     url: 'https://portfolio.example/experience/', runScripts: 'outside-only', virtualConsole,
   });
   t.after(() => dom.window.close());
   const { window } = dom;
   const document = window.document;
   const requests = [];
+  const toast = document.getElementById('toast-component');
+  let toastOpen = false;
+  const originalMatches = toast.matches.bind(toast);
+  toast.matches = selector => selector === ':popover-open' ? toastOpen : originalMatches(selector);
+  toast.showPopover = () => { toastOpen = true; };
+  toast.hidePopover = () => { toastOpen = false; };
+  window.eval(toastSource);
   let closed = 0;
   const modal = document.getElementById('add-experience-modal');
   if (modal) {
@@ -68,6 +79,7 @@ test('anonymous page runs normally with no modal or modal event listeners', asyn
   assert.deepEqual(page.errors, []);
   assert.equal(page.requests.length, 1);
   assert.equal(page.form, null);
+  assert.equal(page.document.getElementById('toast-title').textContent, '');
 });
 
 test('POST sends FormData and CSRF, then resets/closes/refetches with the latest query', async t => {
@@ -84,6 +96,8 @@ test('POST sends FormData and CSRF, then resets/closes/refetches with the latest
   page.document.getElementById('experience-search-input').value = 'new search';
   await respond(post, 201, { success: true, pk: 'created-id' });
   assert.equal(page.closed(), 1);
+  assert.equal(page.document.getElementById('toast-title').textContent, 'Berhasil');
+  assert(page.document.getElementById('toast-component').classList.contains('toast-success'));
   assert.equal(page.form.elements.namedItem('title').value, 'New research');
   assert.equal(page.form.querySelector('button').disabled, false);
   assert.equal(new URL(page.requests[2].url).searchParams.get('q'), 'new search');
@@ -111,6 +125,8 @@ test('400 shows field and non-field validation as inert text while retaining ent
   assert.equal(page.closed(), 0);
   assert.equal(page.requests.length, 2);
   assert.deepEqual(page.errors, []);
+  assert.equal(page.document.getElementById('toast-title').textContent, 'Data belum valid');
+  assert(page.document.getElementById('toast-component').classList.contains('toast-error'));
 });
 
 test('403 JSON and HTML CSRF failures show permission/session errors without closing', async t => {
@@ -119,6 +135,8 @@ test('403 JSON and HTML CSRF failures show permission/session errors without clo
   page.submit();
   await respond(page.requests[1], 403, { message: payload });
   assert.equal(page.document.getElementById('experience-form-error').textContent, payload);
+  assert.equal(page.document.getElementById('toast-message').textContent, payload);
+  assert.equal(page.document.getElementById('toast-title').textContent, 'Akses ditolak');
   assert.equal(page.document.querySelector('img'), null);
   page.submit();
   page.requests[2].resolve({ status: 403, json: async () => { throw new SyntaxError('HTML response'); } });
@@ -135,10 +153,13 @@ test('server/network failures preserve inputs and permit retry', async t => {
   page.submit();
   await respond(page.requests[1], 500, {});
   assert(page.document.getElementById('experience-form-error').textContent.includes('Server'));
+  assert.equal(page.document.getElementById('toast-title').textContent, 'Gagal menambahkan pengalaman');
   page.submit();
   page.requests[2].reject(new Error('Network unavailable'));
   await flush();
   assert(page.document.getElementById('experience-form-error').textContent.includes('koneksi'));
+  assert.equal(page.document.getElementById('toast-title').textContent, 'Gangguan koneksi');
+  assert(page.document.getElementById('toast-component').classList.contains('toast-error'));
   assert.equal(page.form.elements.namedItem('title').value, 'Retain title');
   assert.equal(page.closed(), 0);
   assert.equal(page.form.querySelector('button').disabled, false);
@@ -168,5 +189,19 @@ test('a failed list refresh after creation uses the list error state', async t =
   assert.equal(page.closed(), 1);
   assert.equal(page.document.getElementById('experience-error').classList.contains('hide'), false);
   assert.equal(page.document.getElementById('experience-form-error').hidden, true);
+  assert.equal(page.document.getElementById('toast-title').textContent, 'Gagal memuat pengalaman');
   assert.equal(page.errors.length, 1);
+});
+
+test('anonymous network failures show the shared toast without modal errors', async t => {
+  const page = await setup(t, false);
+  page.document.getElementById('experience-search-form').dispatchEvent(
+    new page.window.Event('submit', { cancelable: true })
+  );
+  page.requests[1].reject(new Error('Network unavailable'));
+  await flush();
+  assert.equal(page.form, null);
+  assert.equal(page.errors.length, 1);
+  assert.equal(page.document.getElementById('toast-title').textContent, 'Gagal memuat pengalaman');
+  assert(page.document.getElementById('toast-component').classList.contains('toast-error'));
 });

@@ -28,11 +28,16 @@ validates through `ExperienceForm`.
 
 The submit button is disabled while saving, and duplicate submissions are
 ignored. Error messages use the same safe DOM text helper as list data, so a
-malicious message cannot inject HTML. No toast notifications are used.
+malicious message cannot inject HTML. The existing global `showToast()` loaded by
+`base.html` supplies concise success, validation, permission, server and network
+notifications. Detailed validation stays in the modal. List-fetch errors also
+use that shared toast; stale or aborted requests do not produce notifications.
 
 `tests/experience-modal.test.cjs` covers CSRF FormData, search preservation,
 reset/close/refetch, validation, permission and connection failures, duplicate
-submissions, safe error text and absent privileged elements. jsdom simulates the
+submissions, safe error text and absent privileged elements. Tests execute the
+actual shared `toast.js` to check notification text/types, including anonymous
+network failures. jsdom simulates the
 popover lifecycle; native browser opening and visual layout are not covered by
 these DOM tests. Django tests verify role visibility and rendered ModelForm
 fields.
