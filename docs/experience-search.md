@@ -3,10 +3,11 @@
 The search form in `templates/experience.html` uses the existing Projects search
 styles. JavaScript handles its input and submit events without navigating.
 
-In `static/js/experience.js`, the input handler clears the previous timer and
-sets a new timer using `SEARCH_DEBOUNCE_DELAY = 300`, matching the Projects
-tutorial. It calls the existing `loadExperiences()` after typing pauses for
-300 ms. Submitting the form cancels the timer and searches immediately.
+In `static/js/experience.js`, the input handler invokes `debounce()` to cancel
+the previous timer and schedule the next search using
+`SEARCH_DEBOUNCE_DELAY = 300`, matching the Projects tutorial. It calls
+`loadExperienceList()` after typing pauses for 300 ms. Submitting the form calls
+`refreshExperienceList()` to cancel it and search immediately.
 
 There is one full-list request on page load. Typing a word with less than
 300 ms between keystrokes produces one additional search request after the
@@ -23,12 +24,14 @@ absent. Anonymous users can access the endpoint and use search.
 
 Every input change immediately aborts and invalidates the previous request,
 including during the debounce delay. Each fetch captures a request version;
-responses and failures from older versions are ignored. Checks after both
-fetch and JSON parsing prevent late responses from replacing newer results,
+responses and failures from older versions are ignored. The version check after
+fetching and parsing JSON prevents late responses from replacing newer results,
 even if cancellation is ignored by the network.
 
-Search reuses `buildExperience()`, preserving the star display, role controls,
-safe text insertion and URL validation. Loading, empty and error states remain
+`fetchExperienceData()` handles the request and validates the response;
+`renderExperienceItems()` builds the list through `buildExperience()`, preserving
+the star display, role controls, safe text insertion and URL validation.
+Loading, empty and error states remain
 available. Empty-search-result text is fixed text rather than interpolated HTML.
 
 Regression checks:

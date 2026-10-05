@@ -17,7 +17,7 @@ Content-Type header is needed. The backend still enforces permissions and
 validates through `ExperienceForm`.
 
 - 201: reset the form, clear errors, close the modal, cancel pending search
-  debounce and call the existing `loadExperiences()` with the current search.
+  debounce and call the shared `refreshExperienceList()` with the current search.
 - 400: show field errors beside their controls and non-field errors in the
   summary; mark invalid controls and focus the first invalid field.
 - 403: show the permission/session error inside the modal, including a fallback

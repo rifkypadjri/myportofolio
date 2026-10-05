@@ -1,6 +1,14 @@
-from django.shortcuts import render
-from django.http import JsonResponse
+import datetime
+
+from django.contrib import messages
+from django.contrib.auth import login, logout
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.db.models import Q
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.http import url_has_allowed_host_and_scheme
+from django.views.decorators.http import require_POST
 
 from main.models import Experience, Achievement, Project
 from main.forms import ExperienceForm, ProjectForm
@@ -10,19 +18,6 @@ from main.permissions import (
     superuser_create_required,
     superuser_delete_required,
 )
-
-from django.contrib import messages
-from django.shortcuts import get_object_or_404, redirect, render
-
-from django.contrib import messages
-from django.contrib.auth import login, logout
-from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
-from django.shortcuts import redirect, render
-import datetime
-
-from django.contrib.auth.decorators import login_required  # Tambahkan baris ini
-from django.utils.http import url_has_allowed_host_and_scheme
-from django.views.decorators.http import require_POST
 
 
 @superuser_create_required
@@ -172,43 +167,47 @@ def get_projects_json(request):
     return JsonResponse(data, safe=False)
 
 
-def get_experiences_json(request):
+def _get_experiences(query_params):
     experiences = Experience.objects.prefetch_related("starred_by").all()
 
-    if "q" in request.GET:
-        query = request.GET.get("q", "").strip()
+    if "q" in query_params:
+        query = query_params.get("q", "").strip()
         if query:
             experiences = experiences.filter(
                 Q(title__icontains=query) | Q(description__icontains=query)
             )
     else:
         # Preserve the previously supported title-only API filter.
-        title_query = request.GET.get("title", "").strip()
+        title_query = query_params.get("title", "").strip()
         if title_query:
             experiences = experiences.filter(title__icontains=title_query)
 
-    data = []
-    for experience in experiences:
-        starred_users = experience.starred_by.all()
-        data.append({
-            "model": "main.experience",
-            "pk": str(experience.id),
-            "fields": {
-                "title": experience.title,
-                "description": experience.description,
-                "category": experience.category,
-                "category_display": experience.get_category_display(),
-                "thumbnail": experience.thumbnail,
-                "started_at": experience.started_at,
-                "ended_at": experience.ended_at,
-                "is_ongoing": experience.is_ongoing,
-                "star_count": starred_users.count(),
-                "is_starred": (
-                    request.user in starred_users
-                    if request.user.is_authenticated else False
-                ),
-            },
-        })
+    return experiences
+
+
+def _serialize_experience(experience, user):
+    starred_users = list(experience.starred_by.all())
+    return {
+        "model": "main.experience",
+        "pk": str(experience.id),
+        "fields": {
+            "title": experience.title,
+            "description": experience.description,
+            "category": experience.category,
+            "category_display": experience.get_category_display(),
+            "thumbnail": experience.thumbnail,
+            "started_at": experience.started_at,
+            "ended_at": experience.ended_at,
+            "is_ongoing": experience.is_ongoing,
+            "star_count": len(starred_users),
+            "is_starred": user.is_authenticated and user in starred_users,
+        },
+    }
+
+
+def get_experiences_json(request):
+    experiences = _get_experiences(request.GET)
+    data = [_serialize_experience(experience, request.user) for experience in experiences]
     return JsonResponse(data, safe=False)
 
 
@@ -234,18 +233,19 @@ def create_experience_ajax(request):
         )
 
     form = ExperienceForm(request.POST)
-    if form.is_valid():
-        experience = form.save()
+    if not form.is_valid():
         return JsonResponse(
-            {
-                "success": True,
-                "message": "Pengalaman berhasil ditambahkan.",
-                "pk": str(experience.pk),
-            },
-            status=201,
+            {"success": False, "errors": form.errors.get_json_data()}, status=400
         )
+
+    experience = form.save()
     return JsonResponse(
-        {"success": False, "errors": form.errors.get_json_data()}, status=400
+        {
+            "success": True,
+            "message": "Pengalaman berhasil ditambahkan.",
+            "pk": str(experience.pk),
+        },
+        status=201,
     )
 
 
