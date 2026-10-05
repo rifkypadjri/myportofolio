@@ -222,5 +222,98 @@
     loadExperiences(searchInput.value.trim());
   });
 
+  const addModal = document.getElementById('add-experience-modal');
+  const addForm = document.getElementById('experience-add-form');
+
+  // These elements are intentionally absent for guests and non-creator roles.
+  if (addModal && addForm) {
+    const formError = document.getElementById('experience-form-error');
+    const submitButton = addForm.querySelector('button[type="submit"]');
+    const submitLabel = submitButton.textContent;
+    const fieldErrors = new Map();
+    let isSubmitting = false;
+
+    addForm.querySelectorAll('[data-field-error]').forEach(container => {
+      const name = container.dataset.fieldError;
+      fieldErrors.set(name, container);
+      const control = addForm.elements.namedItem(name);
+      if (control) control.setAttribute('aria-describedby', container.id);
+    });
+
+    function clearFormErrors() {
+      formError.replaceChildren();
+      formError.hidden = true;
+      fieldErrors.forEach((container, name) => {
+        container.replaceChildren();
+        container.hidden = true;
+        const control = addForm.elements.namedItem(name);
+        if (control) control.removeAttribute('aria-invalid');
+      });
+    }
+
+    function showFormError(message) {
+      formError.textContent = textValue(message);
+      formError.hidden = false;
+      formError.focus();
+    }
+
+    function showValidationErrors(errors) {
+      showFormError('Periksa dan perbaiki data yang ditandai di bawah ini.');
+      let firstInvalid;
+      Object.entries(errors || {}).forEach(([name, messages]) => {
+        const container = fieldErrors.get(name) || formError;
+        const entries = Array.isArray(messages) ? messages : [messages];
+        entries.forEach(error => container.append(element('p', '', error?.message ?? error)));
+        container.hidden = false;
+        const control = addForm.elements.namedItem(name);
+        if (control) {
+          control.setAttribute('aria-invalid', 'true');
+          if (!firstInvalid) firstInvalid = control;
+        }
+      });
+      if (firstInvalid) firstInvalid.focus();
+    }
+
+    addForm.addEventListener('submit', async event => {
+      event.preventDefault();
+      if (isSubmitting) return;
+      isSubmitting = true;
+      clearFormErrors();
+      submitButton.disabled = true;
+      submitButton.textContent = 'Menyimpan...';
+      addForm.setAttribute('aria-busy', 'true');
+      try {
+        const response = await fetch(addForm.action, {
+          method: 'POST',
+          headers: { Accept: 'application/json' },
+          // Includes the hidden csrfmiddlewaretoken rendered by Django.
+          body: new FormData(addForm),
+        });
+        const result = await response.json().catch(() => ({})) || {};
+        if (response.status === 201) {
+          addForm.reset();
+          clearFormErrors();
+          addModal.hidePopover();
+          clearTimeout(searchTimer);
+          loadExperiences(searchInput.value.trim());
+        } else if (response.status === 400) {
+          showValidationErrors(result.errors);
+        } else if (response.status === 403) {
+          showFormError(result.message || 'Anda tidak memiliki izin atau sesi telah kedaluwarsa. Silakan muat ulang halaman.');
+        } else {
+          showFormError('Server gagal menyimpan pengalaman. Silakan coba lagi.');
+        }
+      } catch (error) {
+        console.error('Error adding experience:', error);
+        showFormError('Tidak dapat terhubung ke server. Periksa koneksi dan coba lagi.');
+      } finally {
+        isSubmitting = false;
+        submitButton.disabled = false;
+        submitButton.textContent = submitLabel;
+        addForm.removeAttribute('aria-busy');
+      }
+    });
+  }
+
   loadExperiences(searchInput.value.trim());
 })();

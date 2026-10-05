@@ -120,6 +120,8 @@ def show_experience(request):
         "name": "Muhammad Rifky Padjri",
         "npm": "2506585800",
     }
+    if can_create_content(request.user):
+        context["form"] = ExperienceForm(auto_id="id_add_experience_%s")
     return render(request, "experience.html", context)
 
 def show_project(request):

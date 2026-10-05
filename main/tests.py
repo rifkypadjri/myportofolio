@@ -8,6 +8,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from main.models import Achievement, Experience, Project
+from main.forms import ExperienceForm
 from main.permissions import (
     can_create_content,
     can_delete_content,
@@ -222,6 +223,64 @@ class MainTest(TestCase):
         self.assertTemplateUsed(response, "achievement.html")
         self.assertContains(response, "Belum ada prestasi yang ditambahkan.")
         self.assertNotContains(response, "Datavidia Finalist")
+
+
+class ExperienceFormTest(TestCase):
+    def setUp(self):
+        self.payload = {
+            "title": "Research Assistant",
+            "description": "Research work",
+            "category": "research",
+            "thumbnail": "https://example.com/image.png?width=200&height=130",
+            "ended_at": "2026-09-30T12:30",
+        }
+        self.xss = '<img src="x" onerror="alert(\'XSS!\')">'
+
+    def test_strips_tags_before_saving_free_text(self):
+        form = ExperienceForm({
+            **self.payload,
+            "title": f"<b>Research</b> Assistant {self.xss}",
+            "description": f"<p>Research & development</p>{self.xss}",
+        })
+        self.assertTrue(form.is_valid(), form.errors)
+        experience = form.save()
+        experience.refresh_from_db()
+        self.assertEqual(experience.title, "Research Assistant")
+        self.assertEqual(experience.description, "Research & development")
+
+    def test_tag_only_required_text_is_rejected(self):
+        for field in ("title", "description"):
+            with self.subTest(field=field):
+                form = ExperienceForm({**self.payload, field: self.xss})
+                self.assertFalse(form.is_valid())
+                self.assertIn(field, form.errors)
+                self.assertEqual(form.errors.as_data()[field][0].code, "required")
+        self.assertFalse(Experience.objects.exists())
+
+    def test_normal_text_and_other_fields_keep_their_values(self):
+        text = 'A < B & C > D, "quotes", O\'Brien, café\nSecond line.'
+        form = ExperienceForm({**self.payload, "title": text, "description": text})
+        self.assertTrue(form.is_valid(), form.errors)
+        experience = form.save()
+        self.assertEqual(experience.title, text)
+        self.assertEqual(experience.description, text)
+        self.assertEqual(experience.category, self.payload["category"])
+        self.assertEqual(experience.thumbnail, self.payload["thumbnail"])
+        self.assertEqual(experience.ended_at, form.cleaned_data["ended_at"])
+        self.assertIsNotNone(experience.ended_at)
+
+    def test_updates_also_sanitize_and_script_contents_remain_plain_text(self):
+        experience = Experience.objects.create(title="Old title", description="Old description")
+        form = ExperienceForm({
+            **self.payload,
+            "title": "<b>Updated title</b>",
+            "description": "<script>alert('XSS!')</script>Plain description",
+        }, instance=experience)
+        self.assertTrue(form.is_valid(), form.errors)
+        form.save()
+        experience.refresh_from_db()
+        self.assertEqual(experience.title, "Updated title")
+        self.assertEqual(experience.description, "alert('XSS!')Plain description")
 
 
 class ExperienceJsonTest(TestCase):
@@ -446,7 +505,7 @@ class AuthorizationTest(TestCase):
                 ),
                 (
                     experience_response,
-                    reverse("main:create_experience"),
+                    reverse("main:create_experience_ajax"),
                     can_create,
                 ),
             )
@@ -778,6 +837,31 @@ class ExperienceAjaxCreateTest(TestCase):
             "ended_at": "",
         }
 
+    def test_add_modal_is_only_rendered_for_creators(self):
+        regular = get_user_model().objects.create_user(username="modal-regular")
+        editor = get_user_model().objects.create_user(username="modal-editor")
+        editor.groups.add(Group.objects.create(name="Editor"))
+        for user in (None, regular, editor, self.admin):
+            with self.subTest(user=user.username if user else "anonymous"):
+                self.client.logout()
+                if user:
+                    self.client.force_login(user)
+                response = self.client.get(reverse("main:show_experience"))
+                self.assertEqual(response.status_code, 200)
+                self.assertNotContains(response, f'href="{reverse("main:create_experience")}"')
+                if user == self.admin:
+                    self.assertContains(response, 'id="add-experience-modal"')
+                    self.assertContains(response, 'popovertarget="add-experience-modal"')
+                    self.assertContains(response, f'action="{self.url}"')
+                    self.assertContains(response, 'name="csrfmiddlewaretoken"')
+                    self.assertEqual(set(response.context["form"].fields), {
+                        "title", "description", "category", "thumbnail", "ended_at",
+                    })
+                else:
+                    self.assertNotContains(response, 'id="add-experience-modal"')
+                    self.assertNotContains(response, 'id="experience-add-form"')
+                    self.assertNotContains(response, 'popovertarget="add-experience-modal"')
+
     def test_authorized_valid_request_creates_experience(self):
         self.client.force_login(self.admin)
         response = self.client.post(self.url, self.payload)
@@ -795,6 +879,33 @@ class ExperienceAjaxCreateTest(TestCase):
         self.assertEqual(experience.starred_by.count(), 0)
         items = self.client.get(reverse("main:get_experiences_json")).json()
         self.assertEqual(items[0]["pk"], result["pk"])
+
+    def test_ajax_creation_stores_and_returns_sanitized_text(self):
+        self.client.force_login(self.admin)
+        payload = '<img src="x" onerror="alert(\'XSS!\')">'
+        response = self.client.post(self.url, {
+            **self.payload,
+            "title": f"Research {payload}",
+            "description": f"<b>Development</b>{payload}",
+        })
+        self.assertEqual(response.status_code, 201)
+        experience = Experience.objects.get(pk=response.json()["pk"])
+        self.assertEqual(experience.title, "Research")
+        self.assertEqual(experience.description, "Development")
+        fields = self.client.get(reverse("main:get_experiences_json")).json()[0]["fields"]
+        self.assertEqual(fields["title"], "Research")
+        self.assertEqual(fields["description"], "Development")
+
+    def test_ajax_rejects_tag_only_required_fields(self):
+        self.client.force_login(self.admin)
+        payload = '<img src="x" onerror="alert(\'XSS!\')">'
+        response = self.client.post(self.url, {
+            **self.payload, "title": payload, "description": payload,
+        })
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(response.json()["success"])
+        self.assertEqual(set(response.json()["errors"]), {"title", "description"})
+        self.assertFalse(Experience.objects.exists())
 
     def test_invalid_request_returns_field_errors_without_saving(self):
         self.client.force_login(self.admin)

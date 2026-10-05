@@ -30,9 +30,26 @@ Attribute text uses DOM property setters or `setAttribute()` on fixed,
 non-executable attributes (`alt`, `aria-label`). URL values receive separate
 protocol/UUID validation because HTML escaping alone cannot make URLs safe.
 
-No server-side sanitization was added to Experience. Safety does not depend on
-stripping tags from stored data. The layout and controls are unchanged for valid
-API values.
+## Input sanitization and output escaping
+
+`ExperienceForm.clean_title()` and `clean_description()` call Django's
+`strip_tags()` before storing the two free-text fields. Normal text is retained;
+HTML tags and their attributes are removed. For example, a title containing
+`Research <img src="x" onerror="alert('XSS!')">` saves as `Research`.
+Tag-only input becomes empty and is rejected to preserve the required-field
+rules. The shared ModelForm applies this to AJAX creation, the existing create
+view and the update view.
+
+`category` is a validated choice, `thumbnail` is a validated URL, and `ended_at`
+is a datetime; their existing validation is retained without tag stripping.
+IDs, generated dates and star relations are not free-text form fields.
+
+This is defense in depth: input sanitization reduces stored HTML, while DOM
+text insertion prevents remaining text from being interpreted as executable
+markup. `strip_tags()` is not an output-safety guarantee: script contents can
+remain as plain text, and old records or writes outside the ModelForm may still
+contain tags. JavaScript therefore continues to use `textContent`, safe
+attribute setters and URL validation. Do not mark sanitized strings as safe HTML.
 
 ## Regression test
 
@@ -44,6 +61,14 @@ descriptions, category text, confirmation text, accessibility labels and image
 alt text. They also dispatch image error events and assert that no alert runs.
 Tests cover unsafe URL schemes, malformed IDs/counts/booleans, and legitimate
 display text and URLs.
+
+Django's `ExperienceFormTest` and `ExperienceAjaxCreateTest` also verify stripped
+values in the database and JSON response, rejection of tag-only required text,
+update sanitization, normal punctuation/Unicode, and existing field validation.
+
+```powershell
+.\env\Scripts\python.exe manage.py test main.tests.ExperienceFormTest main.tests.ExperienceAjaxCreateTest
+```
 
 Install the test dependency outside the repository and run in PowerShell:
 

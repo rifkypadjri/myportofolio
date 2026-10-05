@@ -30,12 +30,15 @@
            data-can-delete="{{ can_delete_content|yesno:'true,false' }}"
            data-csrf-token="{{ csrf_token }}"></div>
       {% if can_create_content %}
-      <a href="{% url 'main:create_experience' %}" class="button project-add-button">
+      <button type="button" class="button project-add-button" popovertarget="add-experience-modal">
         <span aria-hidden="true">+</span> Tambah Pengalaman
-      </a>
+      </button>
       {% endif %}
     </div>
   </section>
 </main>
+{% if can_create_content %}
+{% include 'components/experience_form_modal.html' %}
+{% endif %}
 <script src="{% static 'js/experience.js' %}" defer></script>
 {% endblock content %}

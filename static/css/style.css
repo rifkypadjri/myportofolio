@@ -1462,6 +1462,15 @@ footer {
   justify-content: center;
 }
 
+#experience-add-form .form-error {
+  color: #fca5a5;
+}
+
+#experience-add-form button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
 .project-form-modal:popover-open {
   display: flex;
 }
