@@ -1,28 +1,23 @@
-from django.shortcuts import render
+import datetime
+
+from django.contrib import messages
+from django.contrib.auth import login, logout
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.db.models import Q
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.http import url_has_allowed_host_and_scheme
+from django.views.decorators.http import require_POST
 
 from main.models import Experience, Achievement, Project
 from main.forms import ExperienceForm, ProjectForm
 from main.permissions import (
+    can_create_content,
     editor_or_superuser_required,
     superuser_create_required,
     superuser_delete_required,
 )
-
-from django.contrib import messages
-from django.core import serializers
-from django.http import HttpResponse
-from django.shortcuts import get_object_or_404, redirect, render
-
-from django.contrib import messages
-from django.contrib.auth import login, logout
-from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
-from django.shortcuts import redirect, render
-import datetime
-
-from django.contrib.auth.decorators import login_required  # Tambahkan baris ini
-from django.utils.http import url_has_allowed_host_and_scheme
-from django.views.decorators.http import require_POST
 
 
 @superuser_create_required
@@ -116,21 +111,12 @@ def show_main(request):
 
 
 def show_experience(request):
-    json_response = get_experiences_json(request)
-
-    experiences = serializers.deserialize(
-        "json",
-        json_response.content.decode("utf-8"),
-    )
-    experiences = [experience.object for experience in experiences]
-    title_query = request.GET.get("title", "").strip()
-
     context = {
         "name": "Muhammad Rifky Padjri",
         "npm": "2506585800",
-        "experience_list": experiences,
-        "title_query": title_query,
     }
+    if can_create_content(request.user):
+        context["form"] = ExperienceForm(auto_id="id_add_experience_%s")
     return render(request, "experience.html", context)
 
 def show_project(request):
@@ -181,26 +167,48 @@ def get_projects_json(request):
     return JsonResponse(data, safe=False)
 
 
+def _get_experiences(query_params):
+    experiences = Experience.objects.prefetch_related("starred_by").all()
+
+    if "q" in query_params:
+        query = query_params.get("q", "").strip()
+        if query:
+            experiences = experiences.filter(
+                Q(title__icontains=query) | Q(description__icontains=query)
+            )
+    else:
+        # Preserve the previously supported title-only API filter.
+        title_query = query_params.get("title", "").strip()
+        if title_query:
+            experiences = experiences.filter(title__icontains=title_query)
+
+    return experiences
+
+
+def _serialize_experience(experience, user):
+    starred_users = list(experience.starred_by.all())
+    return {
+        "model": "main.experience",
+        "pk": str(experience.id),
+        "fields": {
+            "title": experience.title,
+            "description": experience.description,
+            "category": experience.category,
+            "category_display": experience.get_category_display(),
+            "thumbnail": experience.thumbnail,
+            "started_at": experience.started_at,
+            "ended_at": experience.ended_at,
+            "is_ongoing": experience.is_ongoing,
+            "star_count": len(starred_users),
+            "is_starred": user.is_authenticated and user in starred_users,
+        },
+    }
+
+
 def get_experiences_json(request):
-    title_query = request.GET.get("title", "").strip()
-    experiences = Experience.objects.all()
-
-    if title_query:
-        experiences = experiences.filter(title__icontains=title_query)
-
-    experiences_json = serializers.serialize(
-        "json",
-        experiences,
-        fields=(
-            "title",
-            "description",
-            "category",
-            "thumbnail",
-            "started_at",
-            "ended_at",
-        ),
-    )
-    return HttpResponse(experiences_json, content_type="application/json")
+    experiences = _get_experiences(request.GET)
+    data = [_serialize_experience(experience, request.user) for experience in experiences]
+    return JsonResponse(data, safe=False)
 
 
 def show_projects(request):
@@ -211,6 +219,34 @@ def show_projects(request):
         "title_query": title_query,
     }
     return render(request, "project.html", context)
+
+
+@require_POST
+def create_experience_ajax(request):
+    if not can_create_content(request.user):
+        return JsonResponse(
+            {
+                "success": False,
+                "message": "Hanya pemilik portofolio yang dapat menambahkan pengalaman.",
+            },
+            status=403,
+        )
+
+    form = ExperienceForm(request.POST)
+    if not form.is_valid():
+        return JsonResponse(
+            {"success": False, "errors": form.errors.get_json_data()}, status=400
+        )
+
+    experience = form.save()
+    return JsonResponse(
+        {
+            "success": True,
+            "message": "Pengalaman berhasil ditambahkan.",
+            "pk": str(experience.pk),
+        },
+        status=201,
+    )
 
 
 @require_POST

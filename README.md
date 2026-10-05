@@ -1,8 +1,41 @@
-Nama : Muhammad Rifky Padjri
-NPM : 2506585800
-Kelas : PBP A
+# My Portfolio
 
-readme yang udah diubah buat latihan branch
+Aplikasi portofolio berbasis Django untuk menampilkan profil, proyek, dan pengalaman. Proyek ini dikembangkan untuk tugas Pemrograman Berbasis Platform (PBP), dengan autentikasi, izin berdasarkan role, star/unstar Project, serta daftar Experience dan penambahan data melalui AJAX.
+
+- **Nama:** Muhammad Rifky Padjri
+- **NPM:** 2506585800
+- **Kelas:** PBP A
+
+## Menjalankan secara lokal
+
+Prasyarat: Python 3.10 atau lebih baru dan pip. Jalankan perintah berikut dari direktori repository yang berisi `manage.py`.
+
+```powershell
+python -m venv env
+.\env\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+```
+
+Pada Linux/macOS, gunakan `source env/bin/activate` untuk aktivasi. Jika PowerShell tidak mengizinkan aktivasi, gunakan `.\env\Scripts\python.exe` sebagai pengganti `python` pada perintah berikutnya.
+
+Database lokal menggunakan SQLite secara default; PostgreSQL tidak diperlukan. Jika sudah memiliki file `.env`, pastikan `PRODUCTION=False` untuk penggunaan lokal. File `.env` tidak wajib ketika variabel tersebut belum diatur.
+
+```powershell
+python manage.py migrate
+python manage.py check
+python manage.py createsuperuser
+python manage.py runserver
+```
+
+Buka [halaman utama](http://127.0.0.1:8000/) atau [daftar Experience](http://127.0.0.1:8000/experience/). Pembuatan superuser bersifat opsional untuk melihat daftar, tetapi diperlukan untuk mencoba modal tambah Experience. Login dengan akun tersebut melalui aplikasi atau [Django Admin](http://127.0.0.1:8000/admin/). Database baru belum berisi data; tambahkan melalui modal atau admin. Hentikan server dengan `Ctrl+C`.
+
+Untuk menjalankan pengujian backend yang tersedia:
+
+```powershell
+python manage.py test main
+```
+
+## Dokumentasi tugas
 
 ### Tugas 1
 
@@ -123,3 +156,51 @@ Strategi prompting dilakukan secara bertahap. Setiap prompt memberikan konteks r
 Jawaban AI tidak dianggap pasti benar dan digunakan mentah mentah. Selama sesi pengembangan, perubahan selalu diperiksa melalui pengecekan perubahan, `python manage.py check`, dan pengujian akses URL langsung. 
 
 Keterbatasan AI yang saya temukan adalah AI tidak dapat menggantikan pengujian visual/interaksi browser oleh developer, sehingga masih sangat dibutuhkan manusia untuk mengecek hasil tampilan dari web yang dibuat
+
+### Tugas 5
+
+#### Ringkasan implementasi
+
+- **Daftar AJAX:** template awal menampilkan struktur halaman. JavaScript mengambil JSON dengan `fetch()`, lalu `renderExperienceItems()` membangun kartu di DOM, termasuk jumlah star dan status star pengguna. Daftar dapat dibaca tanpa login.
+- **Pencarian:** judul dan deskripsi difilter melalui Django ORM menggunakan `icontains`. Debounce 300 ms mengurangi request; pembatalan dan versi request mencegah hasil lama menimpa hasil terbaru. Query kosong mengembalikan seluruh daftar.
+- **Tambah melalui modal:** hanya superuser melihat tombol tambah. POST menggunakan `FormData`, token CSRF dari form, dan validasi `ExperienceForm`. Authorization tetap diperiksa di view. Setelah berhasil, modal direset/ditutup dan daftar diambil ulang dengan pencarian aktif, tanpa reload halaman.
+- **Umpan balik:** tersedia state loading, kosong, dan error, pesan validasi per field, serta toast melalui `showToast()` yang sudah ada. Tombol menampilkan "Menyimpan..." dan dinonaktifkan selama submit. Pencarian dilengkapi tombol hapus dan jumlah hasil.
+- **Keamanan dan pemeliharaan:** rendering teks memakai `textContent`, URL thumbnail divalidasi, dan judul/deskripsi disanitasi dengan `strip_tags()`. Fungsi fetch, rendering, pencarian, dan penanganan form dipisahkan tanpa mengubah aturan role maupun star/unstar Project dari Tugas 4.
+
+| Metode | Endpoint | Perilaku |
+| --- | --- | --- |
+| GET | `/api/experiences/?q=keyword` | Daftar JSON publik; `q` opsional untuk pencarian. |
+| POST | `/experiences/add-ajax/` | `201` berhasil, `400` validasi gagal, `403` akses ditolak; membutuhkan superuser dan CSRF yang valid. |
+
+Alur halaman: **template struktur → fetch JSON → pemeriksaan respons → rendering DOM**. Kegagalan request menampilkan state error; hasil kosong menampilkan pesan kosong. Logika utama tersedia di [experience.js](static/js/experience.js), [views.py](main/views.py), dan [forms.py](main/forms.py). Penjelasan tambahan: [pencarian](docs/experience-search.md), [perlindungan XSS](docs/experience-xss.md), dan [modal tambah](docs/experience-create.md).
+
+#### Jawaban refleksi
+
+1. Apa itu debouncing dan mengapa penting untuk pencarian AJAX?
+
+   Debouncing adalah teknik menunda pemanggilan fungsi sampai tidak ada event baru selama interval tertentu. Pada pencarian Experience di `static/js/experience.js`, fungsi `debounce()` menggunakan `setTimeout()` dan membatalkan timer sebelumnya dengan `clearTimeout()`. Pencarian dijalankan setelah pengguna berhenti mengetik selama **300 ms**. Jadi, mengetik beberapa karakter dengan cepat biasanya menghasilkan satu request setelah jeda, bukan satu request untuk setiap karakter.
+
+   Teknik ini mengurangi request yang tidak diperlukan, beban server, dan perubahan tampilan yang terlalu sering. Request menuju `/api/experiences/?q=keyword` untuk mencari judul atau deskripsi. Implementasi juga menggunakan `AbortController` dan pemeriksaan versi request agar hasil pencarian lama tidak menimpa hasil terbaru. Debouncing mengurangi frekuensi request, sedangkan kedua mekanisme tersebut mencegah race condition.
+
+2. Apa fungsi `await` pada `fetch()` dan apa yang terjadi jika tidak digunakan?
+
+   `fetch()` bekerja secara asynchronous dan langsung mengembalikan **Promise**, bukan objek `Response`. Dalam fungsi `async`, `await fetch()` menunda kelanjutan fungsi tersebut sampai Promise selesai dan memberikan objek `Response`. Proses ini tidak memblokir antarmuka browser. Selanjutnya, `await response.json()` diperlukan untuk menunggu pembacaan dan parsing body respons menjadi data JavaScript. Pada `fetchExperienceData()`, data yang sudah tersedia kemudian diteruskan ke renderer.
+
+   Tanpa `await`, variabel hasil `fetch()` masih berupa Promise. Mengaksesnya seolah-olah sudah menjadi `Response`, misalnya memanggil `.json()`, akan gagal. Alternatif yang benar adalah menangani Promise menggunakan `.then()` dan `.catch()`. Dengan `await`, penolakan Promise dapat ditangani melalui `try/catch`. Respons HTTP seperti 400 atau 500 tidak otomatis membuat `fetch()` menolak Promise, sehingga aplikasi tetap perlu memeriksa `response.ok` atau `response.status`.
+
+3. Apa itu XSS dan mengapa rendering melalui AJAX/JavaScript perlu perhatian lebih?
+
+   XSS (*Cross-Site Scripting*) terjadi ketika input tidak tepercaya ditafsirkan sebagai kode yang dapat berjalan di browser pengguna. Contohnya, `<img src="x" onerror="alert('XSS!')">` dapat menjalankan event handler jika dimasukkan sebagai HTML tanpa perlindungan.
+
+   Django secara default melakukan **auto-escaping** pada variabel template seperti `{{ experience.title }}`, sehingga karakter khusus HTML ditampilkan sebagai teks. Data JSON yang diterima JavaScript tidak otomatis melewati auto-escaping template tersebut. Jika developer memasukkannya langsung ke `innerHTML` melalui template string, browser akan mem-parsing isinya sebagai HTML. AJAX sendiri tidak menyebabkan XSS; risikonya muncul dari cara data dimasukkan ke DOM.
+
+   Proyek ini menggunakan `escapeHtml()` pada rendering berbasis HTML string di Projects. Experience menggunakan `textContent` melalui helper `element()`, sehingga input ditampilkan sebagai teks tanpa diparsing sebagai HTML. URL thumbnail juga diperiksa agar hanya memakai HTTP/HTTPS. Di server, `ExperienceForm.clean_title()` dan `clean_description()` menggunakan `strip_tags()` untuk menghapus tag sebelum data disimpan; input yang menjadi kosong ditolak. Sanitasi input ini melengkapi perlindungan output, bukan menggantikannya: `strip_tags()` tidak menjamin suatu string aman untuk dimasukkan sebagai HTML.
+
+#### AI Disclosure
+
+- **Alat:** OpenAI Codex digunakan untuk membantu pengembangan Tugas 5, termasuk menghasilkan/mengubah kode dan dokumentasi serta menjalankan pemeriksaan. 
+- **Bagian yang dibantu:** rendering AJAX Experience, audit XSS, pencarian dengan debounce, endpoint create dan ModelForm, sanitasi input, modal, toast, refactoring, pengujian fungsional, perbaikan UX kecil
+- **Strategi prompting:** pekerjaan dibagi menjadi prompt bertahap dengan satu fokus, konteks file/repository, requirement, batasan, dan skenario uji. Prompt meminta penggunaan pola Tutorial 05 yang sudah ada, pemeliharaan fungsi Tugas 4, dan verifikasi role, status HTTP, CSRF, XSS, serta kegagalan request. Tahap dokumentasi secara eksplisit melarang perubahan kode aplikasi.
+- **Verifikasi yang dapat dirujuk:** [pengujian Django](main/tests.py) mencakup izin akses, validasi/sanitasi ModelForm, pencarian, dan endpoint AJAX. Catatan XSS dan modal menjelaskan pengujian DOM serta batasannya. Pengujian otomatis oleh AI tidak dianggap sebagai bukti pemeriksaan manual oleh pengembang. **[DIISI MANUAL: bagian yang diimplementasikan/dikoreksi sendiri, hasil review perubahan, dan pengujian manual yang benar-benar dilakukan; sertakan tanggal atau bukti.]**
+- **Keterbatasan:** pengujian DOM yang dicatat menggunakan simulasi popover dan tidak membuktikan tampilan atau interaksi modal pada browser nyata. Pemeriksaan visual, fokus keyboard, toast, dan console browser perlu dikonfirmasi oleh pengembang. **[DIISI MANUAL: contoh saran AI yang keliru dan koreksi manual jika benar-benar terjadi; belum ada bukti yang cukup untuk mengklaim contoh tertentu.]**
+- **Referensi prompt:** **[DIISI MANUAL: tautan berbagi percakapan, ekspor, atau log prompt Tugas 5 sesuai ketentuan mata kuliah.]** Tautan AI pada bagian tugas sebelumnya bukan log Tugas 5.

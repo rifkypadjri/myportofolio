@@ -1,6 +1,9 @@
-{% extends 'base.html' %} {% block meta %}
+{% extends 'base.html' %}
+{% load static %}
+{% block meta %}
 <title>Experience - Muhammad Rifky Padjri</title>
-{% endblock meta %} {% block content %}
+{% endblock meta %}
+{% block content %}
 <main>
   <section id="experience" class="experience-page">
     <div class="container">
@@ -9,69 +12,38 @@
         Roles, internships, and hands-on work along my journey.
       </p>
 
-      <div class="experience-list">
-        {% for experience in experience_list %}
-        <article class="experience-item timeline-item">
-          <div class="experience-content">
-            <span class="experience-category">
-              {{ experience.get_category_display }}
-            </span>
-            <h3 class="experience-title">{{ experience.title }}</h3>
-            <p class="experience-description">{{ experience.description }}</p>
-            {% if experience.is_ongoing %}
-            <p class="experience-status">Sedang berlangsung</p>
-            {% else %}
-            <p class="experience-status">Selesai</p>
-            {% endif %}
-            {% if can_update_content or can_delete_content %}
-            <div class="experience-actions">
-              {% if can_update_content %}
-              <a
-                href="{% url 'main:update_experience' experience.id %}"
-                class="button button-secondary"
-                >Edit Pengalaman</a
-              >
-              {% endif %}
-              {% if can_delete_content %}
-              {% include "components/experience_delete_modal.html" with experience=experience %}
-              {% endif %}
-            </div>
-            {% endif %}
-          </div>
+      <form id="experience-search-form" class="project-search" role="search">
+        <input type="search" id="experience-search-input" name="q"
+               class="project-search__input" placeholder="Cari pengalaman"
+               aria-label="Cari berdasarkan judul atau deskripsi pengalaman" />
+        <button type="submit" class="button">Cari</button>
+        <button type="button" id="experience-clear-search" class="button button-secondary"
+                aria-label="Hapus pencarian dan tampilkan semua pengalaman" disabled>Hapus</button>
+      </form>
 
-          <div class="experience-thumb">
-            {% if experience.thumbnail %}
-            <div class="photo-frame-polaroid">
-              <img
-                src="{{ experience.thumbnail }}"
-                alt="{{ experience.title }}"
-              />
-            </div>
-            {% else %}
-            <div class="photo-frame-polaroid experience-thumb-placeholder">
-              <span
-                >{{ experience.get_category_display|truncatechars:12 }}</span
-              >
-            </div>
-            {% endif %}
-          </div>
-        </article>
-        {% empty %} {% if title_query %}
-        <p class="empty-state">Tidak ada pengalaman dengan nama tersebut.</p>
-        {% else %}
-        <p class="empty-state">Belum ada pengalaman yang ditambahkan.</p>
-        {% endif %} {% endfor %}
-      </div>
+      <p id="experience-result-count" class="experience-result-count"
+         role="status" aria-live="polite" aria-atomic="true" hidden></p>
+
+      <div id="experience-loading" class="empty-state" role="status">Memuat pengalaman...</div>
+      <div id="experience-empty" class="empty-state hide">Belum ada pengalaman yang ditambahkan.</div>
+      <div id="experience-error" class="empty-state hide" role="alert">Gagal memuat pengalaman. Silakan coba lagi.</div>
+      <div id="experience-list" class="experience-list hide"
+           data-endpoint="{% url 'main:get_experiences_json' %}"
+           data-edit-url="{% url 'main:update_experience' '00000000-0000-0000-0000-000000000000' %}"
+           data-delete-url="{% url 'main:delete_experience' '00000000-0000-0000-0000-000000000000' %}"
+           data-can-edit="{{ can_update_content|yesno:'true,false' }}"
+           data-can-delete="{{ can_delete_content|yesno:'true,false' }}"
+           data-csrf-token="{{ csrf_token }}"></div>
       {% if can_create_content %}
-      <a
-        href="{% url 'main:create_experience' %}"
-        class="button project-add-button"
-      >
-        <span aria-hidden="true">+</span>
-        Tambah Pengalaman
-      </a>
+      <button type="button" class="button project-add-button" popovertarget="add-experience-modal">
+        <span aria-hidden="true">+</span> Tambah Pengalaman
+      </button>
       {% endif %}
     </div>
   </section>
 </main>
+{% if can_create_content %}
+{% include 'components/experience_form_modal.html' %}
+{% endif %}
+<script src="{% static 'js/experience.js' %}" defer></script>
 {% endblock content %}
